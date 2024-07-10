@@ -1,0 +1,6 @@
+media
+media/*
+
+**/migrations/
+**/migrations/*.py
+**/migrations/__pycache__/
