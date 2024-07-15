@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
-
+    'corsheaders',
     # 'rest_framework.authtoken',
     'ytauser',
     'yta_app',
@@ -80,18 +80,15 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'ytaproject.urls'
 AUTH_USER_MODEL = "ytauser.CustomUser"
+CORS_ALLOW_ALL_ORIGINS = True
+
 CORS_ALLOWED_ORIGINS = [
     "https://*",  # Add your trusted origins here
     "http://*",  # Add your trusted origins here
 ]
-CORS_ALLOW_ALL_ORIGINS = True
-# CSRF_COOKIE_DOMAIN = "lostdiscover.asia.squirrelvision.ai"
 # Allow credentials (cookies, authorization headers) to be sent with CORS requests
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True
-# CSRF_COOKIE_DOMAIN = "lostdiscover.asia.squirrelvision.ai"
-# Allow credentials (cookies, authorization headers) to be sent with CORS requests
-CORS_ALLOW_CREDENTIALS = True
+
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO','https')
 
@@ -147,7 +144,7 @@ DATABASES = {
                 'USER': 'ytauser',
                 'PASSWORD': 'YtAvisionBLR@2k24',
                 'HOST': 'localhost',
-                'PORT': '5432',
+                'PORT': '5489',
                 'OPTIONS': {
                 'options': '-c search_path=vision'
             }

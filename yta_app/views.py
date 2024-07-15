@@ -1,10 +1,8 @@
+from datetime import datetime
 from django.utils import timezone
 from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
-from django.core.files.base import ContentFile
-import base64
-import uuid
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from ytauser.models import CustomUser
@@ -13,7 +11,9 @@ from .serializers import CatalogItemsSerializer, JobSerializer, NewsSerializer,O
 from rest_framework.response import Response
 from django.db.models import Q
 from rest_framework import status
-from .utils import ImageToBase64Converter
+from .utils import ImageToBase64Converter, CSVLogger
+from django.core.exceptions import ObjectDoesNotExist
+
 
 
 class OrganizationViewSet(viewsets.ModelViewSet):
@@ -114,6 +114,7 @@ class JobViewSet(viewsets.ModelViewSet):
 
 
 class AuditDataViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
     def list(self, request):
         # Fetch all catalog items
         catalog_items = CatalogItem.objects.all()
@@ -136,14 +137,6 @@ class AuditDataViewSet(viewsets.ViewSet):
             # List to hold surveys for the current sub_category
             surveys_list = []
             for survey in related_surveys:
-                # Safely access survey_template data
-                # questions = []
-                # if isinstance(survey.survey_template, dict) and 'questions' in survey.survey_template:
-                #     # questions = [{
-                #     #     "id": question.get('id', None),
-                #     #     "text": question.get('text', ''),
-                #     #     "type": question.get('type', '')
-                #     # } for question in survey.survey_template['questions']]
 
                 surveys = {
                     "survey_date": survey.survey_date.strftime('%Y-%m-%d'),
@@ -153,14 +146,7 @@ class AuditDataViewSet(viewsets.ViewSet):
                     }
                 }
                 surveys_list.append(surveys)
-            # icon_converter = ImageToBase64Converter(item.sub_category_icon.icon_file.path)
-            # icon = icon_converter.convert_image_to_base64()
-            # print("*"*100)
-            # print(item.overlay)
-            # print("*"*100)
-            # overlay_converter = ImageToBase64Converter(item.overlay.overlay_file.path)
-            # overlay = overlay_converter.convert_image_to_base64()
-            # Check if item.sub_category_icon and item.sub_category_icon.icon_file are not None
+
             if item.sub_category_icon is not None and item.sub_category_icon.icon_file is not None:
                 icon_converter = ImageToBase64Converter(item.sub_category_icon.icon_file.path)
                 icon = icon_converter.convert_image_to_base64()
@@ -224,13 +210,15 @@ class AuditDataViewSet(viewsets.ViewSet):
 class NewsViewSet(viewsets.ModelViewSet):
     queryset = News.objects.all()
     serializer_class = NewsSerializer
+    permission_classes = [IsAuthenticated]
+    
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
 
 class UploadAuditDataView(APIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def parse_audit_data(self, audit_data):
         category_names = set()
@@ -244,11 +232,10 @@ class UploadAuditDataView(APIView):
             for sub_cat in item['sub_categories']:
                 sub_category_list.append(sub_cat['sub_category_name'])
 
-            # Check if the category already exists in the list and update it
             existing_category = next((sc for sc in sub_categories_by_category if sc['category'] == category_name), None)
             if existing_category:
-                existing_category['subcategories'].extend(sub_category_list)  # Add new subcategories
-                existing_category['subcategories'] = list(set(existing_category['subcategories']))  # Remove duplicates
+                existing_category['subcategories'].extend(sub_category_list)
+                existing_category['subcategories'] = list(set(existing_category['subcategories']))
             else:
                 sub_categories_by_category.append({
                     'category': category_name,
@@ -263,66 +250,90 @@ class UploadAuditDataView(APIView):
     def post(self, request, *args, **kwargs):
         data = JSONParser().parse(request)
 
-       
-
         location_data = data['auditLocationDetails']
         audit_data = data['auditData']
+        print(audit_data)
 
-        # Create Location instance
-        location_instance = Location(
-            name=location_data['nameOfThePlace'],
-            address=location_data['yourLocation'],
-            location_type=location_data['typeOfThePlace'],
-            latitude=location_data['latitude'],
-            longitude=location_data['longitude']
-        )
-        
-        # location_instance.save()
+        try:
+            location_instance = Location.objects.get(name=location_data['nameOfThePlace'], location_type=location_data['typeOfThePlace'])
+        except ObjectDoesNotExist:
+            location_instance = Location(
+                name=location_data['nameOfThePlace'],
+                address=location_data['yourLocation'],
+                location_type=location_data['typeOfThePlace'],
+                latitude=location_data['latitude'],
+                longitude=location_data['longitude']
+            )
+            location_instance.save()
 
         categories = self.parse_audit_data(audit_data)
-        
-        job_instance = Job(
+
+        try:
+            job_instance = Job.objects.get(location=location_instance.name, job_name=location_instance.name)
+        except ObjectDoesNotExist:
+            job_instance = Job(
                 location=location_instance.name,
                 category_list=', '.join(categories['categories']),
                 categories=categories['subcategories'],
                 job_name=location_instance.name,
                 job_description=location_data['additionalComments'],
-                assigned_person=None,  # Assuming no one is assigned yet
-                # created_by=CustomUser.objects.get(mobile=request.user.mobile),
-                end_date=timezone.now() + timezone.timedelta(days=30),  # Setting a future end date
+                assigned_person=None,
+                end_date=timezone.now() + timezone.timedelta(days=30),
                 organization=Organization.objects.first(),
-                status='Accepted'
+                status='Accepted',
+                created_by= CustomUser.objects.get(mobile='8547892863')
             )
-        # job_instance.save()
+            job_instance.save()
 
-        # Handle each job and its sub-categories
+        # Update categories if job exists
+        existing_categories = {cat['category']: cat['subcategories'] for cat in job_instance.categories}
+        for category in categories['subcategories']:
+            if category['category'] in existing_categories:
+                existing_subcategories = set(existing_categories[category['category']])
+                new_subcategories = set(category['subcategories'])
+                existing_categories[category['category']] = list(existing_subcategories.union(new_subcategories))
+            else:
+                existing_categories[category['category']] = category['subcategories']
+
+        job_instance.categories = [{'category': k, 'subcategories': v} for k, v in existing_categories.items()]
+        job_instance.save()
+
+        # Process audit items
         for audit_item in audit_data:
-            category_name =audit_item["category_name"]
-            # Iterate over sub-categories, which include image and survey data
+            category_name = audit_item["category_name"]
             for sub_cat in audit_item['sub_categories']:
-                # Handling the image upload
                 image_data = sub_cat['image']
-                print("*"*100)
-                print(sub_cat.get("surveys"))
-                print("*"*100)
                 if image_data:
-                    format, imgstr = image_data.split(';base64,')
-                    ext = format.split('/')[-1]
-                    image_file = ContentFile(base64.b64decode(imgstr), name=f"{uuid.uuid4()}.{ext}")
-
-                    image_upload_instance = ImageUpload(
-                        name=category_name+"_"+sub_cat['sub_category_name'],
-                        description=sub_cat.get('description', ''),  # Defaulting to empty string if not present
-                        image=image_file,  # Ensure this is properly handled and created from uploaded image data
-                        uploaded_by=request.user,  # Assuming the user is authenticated
-                        category=category_name,  # Default category if not provided
-                        subcategory= sub_cat.get('sub_category_name'),
-                        location=location_instance,  # Associating with a location
-                        jobno=job_instance,  # Associating with a job
-                        survey=sub_cat.get('surveys', [])  # Assuming survey data is in a suitable format
-                    )
-                    # image_upload_instance.save()
-                    # image_upload_instance.save()
-
-
+                    # format, imgstr = image_data.split(';base64,')
+                    # ext = format.split('/')[-1]
+                    # image_file = ContentFile(base64.b64decode(imgstr), name=f"{uuid.uuid4()}.{ext}")
+                    filename = location_instance.name+"_"+category_name+"_"+ sub_cat.get('sub_category_name')
+                    img_convertor = ImageToBase64Converter()
+                    image_file = img_convertor.base64_to_image(image_data,filename)
+                    try:
+                        image_upload_instance = ImageUpload.objects.get(name=category_name+"_"+sub_cat['sub_category_name'], location=location_instance)
+                        # Update existing image or survey details if necessary
+                    except ObjectDoesNotExist:
+                        image_upload_instance = ImageUpload(
+                            name=category_name + "_" + sub_cat['sub_category_name'],
+                            description=sub_cat.get('description', ''),
+                            image=image_file,
+                            # uploaded_by=request.user,
+                            category=category_name,
+                            subcategory=sub_cat.get('sub_category_name'),
+                            location=location_instance,
+                            jobno=job_instance,
+                            survey=sub_cat.get('surveys', []),
+                            uploaded_by=CustomUser.objects.get(mobile='8547892863')
+                        )
+                        image_upload_instance.save()
+                        csv_obj = CSVLogger()
+                        current_datetime = datetime.now()
+                        # Format the current datetime as 'dd/mm/yy HH:MM'
+                        formatted_datetime = current_datetime.strftime('%d/%m/%y %H:%M')
+                        file_path = image_upload_instance.image.path
+                        updated_image_path = file_path.replace('/usr/src/app', '/mnt')
+                        # csv_obj.append(formatted_datetime,job_instance.job_number,updated_image_path,category_name,sub_cat['sub_category_name'])
+                        csv_obj.append(formatted_datetime,job_instance.job_number,updated_image_path)
+        
         return JsonResponse({'status': 'success', 'message': 'Data uploaded successfully'})

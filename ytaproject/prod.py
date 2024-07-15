@@ -34,17 +34,19 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
+    'corsheaders',
     'ytauser',
     'yta_app',
     # 'schema_graph',
 
 ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGINS = [
     "https://*",  # Add your trusted origins here
     "http://*",  # Add your trusted origins here
 ]
-CORS_ALLOW_ALL_ORIGINS = True
+
 
 # Allow credentials (cookies, authorization headers) to be sent with CORS requests
 CORS_ALLOW_CREDENTIALS = True
@@ -53,7 +55,6 @@ CORS_ALLOW_CREDENTIALS = True
 #         'rest_framework.authentication.TokenAuthentication',
 #     ),
 # }
-CORS_ALLOW_ALL_ORIGINS = True
 # CSRF_COOKIE_DOMAIN = "lostdiscover.asia.squirrelvision.ai"
 # Allow credentials (cookies, authorization headers) to be sent with CORS requests
 CORS_ALLOW_CREDENTIALS = True
@@ -103,6 +104,7 @@ SIMPLE_JWT = {
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
