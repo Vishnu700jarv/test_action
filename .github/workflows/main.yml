@@ -39,6 +39,8 @@ jobs:
         repository: difinative/YTA-ACD
         token: ${{ secrets.G_TOKEN }}
         path: deployment-repo
+        ref: master
+        
 
     - name: Update Kubernetes deployment
       run: |
