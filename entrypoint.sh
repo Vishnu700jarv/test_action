@@ -29,4 +29,7 @@ python manage.py collectstatic --no-input --clear || { echo 'Failed to collect s
 
 # Start the server
 echo "Starting Django development server..."
-exec python manage.py runserver 0.0.0.0:8000
+# exec python manage.py runserver 0.0.0.0:8000
+exec nohup python manage.py runserver 0.0.0.0:8000 > yta_log.log &
+
+exec python test.py

@@ -3,9 +3,7 @@ import uuid
 from django.db.models import Max
 from django.db import transaction
 from ytauser.models import CustomUser  # Import CustomUser from ytauser.models
-import base64
-from PIL import Image
-import io
+
 class Organization(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, unique=True)

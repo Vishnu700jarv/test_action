@@ -92,7 +92,7 @@ class UserActivity(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
-    avatar_url = models.TextField(blank=True, null=True)
+    avatar_name = models.CharField(max_length=254,blank=True, null=True)
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
     email = models.CharField(max_length=255, blank=True, null=True)

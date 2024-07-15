@@ -4,10 +4,10 @@ from django.conf import settings
 import base64
 from PIL import Image
 from io import BytesIO
-
+from django.core.files.base import ContentFile
 
 class CSVLogger:
-    def __init__(self, filename='upload_backlog.csv', subfolder='logs'):
+    def __init__(self, filename='backlog.csv', subfolder='logs'):
         # Construct the path to the folder where the CSV files will be stored
         log_directory = os.path.join(settings.MEDIA_ROOT, subfolder)
         
@@ -28,15 +28,12 @@ class CSVLogger:
         # Open the CSV file and append a new row with the job details
         with open(self.filepath, mode='a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow([datetime.strftime('%Y-%m-%d %H:%M:%S'), job_name, image_path])
-
-
-
+            writer.writerow([datetime, "Job"+job_name, image_path])
 
 
 
 class ImageToBase64Converter:
-    def __init__(self, image_path):
+    def __init__(self, image_path=None):
         self.image_path = image_path
 
     def convert_image_to_base64(self):
@@ -65,3 +62,16 @@ class ImageToBase64Converter:
         image = Image.open(image_buffer)
         # Save the image to the specified path in PNG format
         image.save(output_path, format="PNG")
+
+    def base64_to_image(self,base64_string,filename):
+        # Decode the base64 string into binary data
+        image_data = base64.b64decode(base64_string)
+        # Turn these bytes into a Django-compatible file-like object
+        image_file = BytesIO(image_data)
+        image = Image.open(image_file)
+
+        # Convert image to Django's File or ContentFile
+        django_file = ContentFile(image_file.getvalue())
+        django_file.name = filename+'.jpeg'  # Set a relevant file name here
+
+        return django_file

@@ -21,6 +21,23 @@ class CreateUserSerializer(serializers.ModelSerializer):
         )
         return user
     
+class CreateUserEmailSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'mobile', 'password', 'email']
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            mobile=validated_data['mobile'],
+            password=validated_data['password'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name'],
+            email=validated_data['email']
+        )
+        return user
+    
 class CreateUserWithNPSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=True, style={'input_type': 'password'})
 
