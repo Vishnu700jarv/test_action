@@ -3,6 +3,29 @@ import uuid
 from django.db.models import Max
 from django.db import transaction
 from ytauser.models import CustomUser  # Import CustomUser from ytauser.models
+import os
+
+def image_upload_path(instance, filename):
+    # Get the extension of the uploaded file
+    file_data = os.path.splitext(filename)
+    extension = file_data[1]
+
+    # Set a threshold for the maximum length to append dynamic values
+    max_length_threshold = 255  # Adjust as needed
+
+    # Check if the original filename is longer than the threshold
+    if len(file_data[0]) > max_length_threshold:
+        # If longer, use the original filename without appending dynamic values
+        new_filename = f"{file_data[0]}{extension}"
+    else:
+        # If within the threshold, append dynamic values as before
+        filename_without_path = os.path.basename(file_data[0])
+        print(instance.pk,instance.id)
+        new_filename = f"{filename_without_path}_{instance.id}{extension}"
+
+    # Return the complete file path
+    return os.path.join('uploads', new_filename)
+
 
 class Organization(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -152,17 +175,16 @@ class Job(models.Model):
 
 
 class ImageUpload(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     description = models.TextField()
-    image = models.ImageField(upload_to='uploads/')
+    image = models.ImageField(upload_to=image_upload_path)
     uploaded_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='imageuploaded_user',null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    is_flagged = models.BooleanField(default=False)
+    is_inferred = models.BooleanField(default=False)
     subcategory = models.TextField(null=True, blank=True)
-    flagged_reason = models.TextField(null=True, blank=True)
-    image_name_ai = models.TextField(null=True, blank=True)
+    additional_reason = models.TextField(null=True, blank=True)
     category = models.CharField(max_length=255, null=True, blank=True)
-    folder = models.CharField(max_length=255, null=True, blank=True)
     location = models.ForeignKey(Location, on_delete=models.CASCADE, null=True, blank=True, related_name='uploaded_images')
     jobno = models.ForeignKey(Job, on_delete=models.CASCADE, null=True, blank=True, related_name='uploaded_images')
     survey = models.JSONField(default=list)  # Survey data in JSON format
@@ -186,10 +208,6 @@ class StreamData(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     inference_data = models.JSONField(default=dict)
     image = models.ForeignKey('ImageUpload', on_delete=models.CASCADE, related_name='stream_data',null=True, blank=True)
-    category = models.CharField(max_length=255)
-    site = models.CharField(max_length=255)
-    engine_identity = models.CharField(max_length=255)
-    camera_state = models.IntegerField(default=0)
     generated_timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -207,3 +225,41 @@ class News(models.Model):
 
     def __str__(self):
         return self.title
+
+class AuditScore(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Link to ImageUpload
+    image_upload = models.ForeignKey(ImageUpload, on_delete=models.CASCADE, verbose_name="Related Image")
+
+    # General fields
+    audit_date = models.DateTimeField(auto_now_add=True, verbose_name="Audit Creation Date")
+    
+    # Scores from different sources
+    frontend_score = models.DecimalField(max_digits=20, decimal_places=16, null=True, blank=True, verbose_name="Frontend Score")
+    ai_score = models.DecimalField(max_digits=20, decimal_places=16, null=True, blank=True, verbose_name="AI Inference Score")
+    admin_score = models.DecimalField(max_digits=20, decimal_places=16, null=True, blank=True, verbose_name="Admin Score")
+
+    # Messages for each score
+    frontend_message = models.TextField(null=True, blank=True, verbose_name="Frontend Score Message")
+    ai_message = models.TextField(null=True, blank=True, verbose_name="AI Score Message")
+    admin_message = models.TextField(null=True, blank=True, verbose_name="Admin Score Message")
+
+    # Additional comments for each score
+    frontend_comment = models.TextField(null=True, blank=True, verbose_name="Frontend Additional Comment")
+    ai_comment = models.TextField(null=True, blank=True, verbose_name="AI Additional Comment")
+    admin_comment = models.TextField(null=True, blank=True, verbose_name="Admin Additional Comment")
+
+    # Dates for each score update
+    frontend_score_date = models.DateTimeField(null=True, blank=True, verbose_name="Date of Frontend Score")
+    ai_score_date = models.DateTimeField(null=True, blank=True, verbose_name="Date of AI Score")
+    admin_score_date = models.DateTimeField(null=True, blank=True, verbose_name="Date of Admin Score")
+
+    # General comments field
+    comments = models.TextField(null=True, blank=True, verbose_name="General Comments")
+
+    def __str__(self):
+        return f"Audit Score for {self.audit_date.strftime('%Y-%m-%d')} linked to ImageUpload {self.image_upload.id}"
+
+    class Meta:
+        verbose_name = "Audit Score"
+        verbose_name_plural = "Audit Scores"

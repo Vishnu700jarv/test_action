@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import News, Organization, CatalogItem, IconUpload, OverlayUpload, SurveyTemplate, Job, ImageUpload, Leaderboard, StreamData, Location
+from .models import AuditScore, News, Organization, CatalogItem, IconUpload, OverlayUpload, SurveyTemplate, Job, ImageUpload, Leaderboard, StreamData, Location
 
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -72,3 +72,8 @@ class NewsSerializer(serializers.ModelSerializer):
         model = News
         fields = ['id', 'title', 'subtitle', 'content', 'image', 'publication_date', 'author']
         read_only_fields = ['id', 'publication_date']
+
+class AuditScoreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AuditScore
+        fields = '__all__'  

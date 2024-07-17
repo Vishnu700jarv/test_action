@@ -1,6 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from .views import AuditDataViewSet, CatalogItemViewSet, CatalogItemsViewSet, IconUploadViewSet, ImageUploadViewSet, JobViewSet, LeaderboardViewSet, LocationViewSet, NewsViewSet, OrganizationViewSet, OverlayUploadViewSet, StreamDataViewSet, UploadAuditDataView
+from schema_graph.views import Schema
 
 router = DefaultRouter()
 router.register(r'organizations', OrganizationViewSet, basename='organization')
@@ -20,4 +21,7 @@ urlpatterns = [
     # Here you define the URL pattern for your UploadAuditDataView.
     path('upload-audit/', UploadAuditDataView.as_view(), name='upload-audit'),
     path('', include(router.urls)),
+    path("schema/", Schema.as_view()),
+
+
 ]
