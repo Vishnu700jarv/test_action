@@ -31,7 +31,7 @@ python manage.py collectstatic --no-input --clear || { echo 'Failed to collect s
 echo "Starting Kafka consumer..."
 # exec python manage.py runserver 0.0.0.0:8000
 # nohup python manage.py runserver 0.0.0.0:8000 > yta_log.log &
-nohup python kafka/consumer.py > consumer_log.log &
+nohup python kafka/consumer.py > media/logs/consumer.log &
 
 echo "Starting Django development server..."
 python manage.py runserver 0.0.0.0:8000
