@@ -6,8 +6,8 @@ from rest_framework.parsers import JSONParser
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from ytauser.models import CustomUser
-from .models import Job, News, Organization, CatalogItem, IconUpload, ImageUpload, Leaderboard, OverlayUpload, StreamData, Location, SurveyTemplate
-from .serializers import CatalogItemsSerializer, JobSerializer, NewsSerializer,OverlayUploadSerializer, OrganizationSerializer, CatalogItemSerializer, IconUploadSerializer, ImageUploadSerializer, LeaderboardSerializer, StreamDataSerializer, LocationSerializer
+from .models import AuditScore, Job, News, Organization, CatalogItem, IconUpload, ImageUpload, Leaderboard, OverlayUpload, StreamData, Location, SurveyTemplate
+from .serializers import AuditScoreSerializer, CatalogItemsSerializer, JobSerializer, NewsSerializer,OverlayUploadSerializer, OrganizationSerializer, CatalogItemSerializer, IconUploadSerializer, ImageUploadSerializer, LeaderboardSerializer, StreamDataSerializer, LocationSerializer
 from rest_framework.response import Response
 from django.db.models import Q
 from rest_framework import status
@@ -183,7 +183,10 @@ class AuditDataViewSet(viewsets.ViewSet):
                 "reserved2":item.reserved2,  
                 "icon": icon,
                 "overlay": overlay,
-                "surveys": surveys_list
+                "surveys": surveys_list,
+                "frontend_score":0.0,
+                "frontend_message":"",
+                "frontend_comment":""
             })
 
         # Convert the categories dictionary to a list for the response
@@ -252,7 +255,7 @@ class UploadAuditDataView(APIView):
 
         location_data = data['auditLocationDetails']
         audit_data = data['auditData']
-        print(audit_data)
+        # print(audit_data)
 
         try:
             location_instance = Location.objects.get(name=location_data['nameOfThePlace'], location_type=location_data['typeOfThePlace'])
@@ -327,6 +330,15 @@ class UploadAuditDataView(APIView):
                             uploaded_by=CustomUser.objects.get(mobile='8547892863')
                         )
                         image_upload_instance.save()
+                        
+                        audit_score_instance = AuditScore(
+                            image_upload = image_upload_instance,
+                            audit_date= timezone.now(),
+                            frontend_score=sub_cat['frontend_score'],
+                            frontend_message=sub_cat['frontend_message'],
+                            frontend_comment=sub_cat['frontend_comment']
+                        )
+                        audit_score_instance.save()
                         csv_obj = CSVLogger()
                         current_datetime = datetime.now()
                         # Format the current datetime as 'dd/mm/yy HH:MM'
@@ -337,3 +349,7 @@ class UploadAuditDataView(APIView):
                         csv_obj.append(formatted_datetime,job_instance.job_number,updated_image_path)
         
         return JsonResponse({'status': 'success', 'message': 'Data uploaded successfully'})
+
+class AuditScoreViewSet(viewsets.ModelViewSet):
+    queryset = AuditScore.objects.all()
+    serializer_class = AuditScoreSerializer

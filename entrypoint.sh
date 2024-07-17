@@ -28,8 +28,10 @@ echo "Collecting static files..."
 python manage.py collectstatic --no-input --clear || { echo 'Failed to collect static files'; exit 1; }
 
 # Start the server
-echo "Starting Django development server..."
+echo "Starting Kafka consumer..."
 # exec python manage.py runserver 0.0.0.0:8000
-exec nohup python manage.py runserver 0.0.0.0:8000 > yta_log.log &
+# nohup python manage.py runserver 0.0.0.0:8000 > yta_log.log &
+nohup python kafka/consumer.py > consumer_log.log &
 
-exec python test.py
+echo "Starting Django development server..."
+python manage.py runserver 0.0.0.0:8000
