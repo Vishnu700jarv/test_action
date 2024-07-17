@@ -128,7 +128,23 @@ class Location(models.Model):
     def __str__(self):
         return self.name
 
+# class Location(models.Model):
+#     location_id = models.AutoField(primary_key=True)
+#     name = models.CharField(max_length=255, unique=True)
+#     location_type = models.CharField(max_length=255, null=True, blank=True)
+#     address = models.TextField()
+#     latitude = models.DecimalField(max_digits=9, decimal_places=6)
+#     longitude = models.DecimalField(max_digits=9, decimal_places=6)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
 
+#     def save(self, *args, **kwargs):
+#         # Capitalize the name before saving
+#         self.name = self.name.capitalize()
+#         super(Location, self).save(*args, **kwargs)
+
+#     def __str__(self):
+#         return self.name
 class Job(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     location = models.CharField(max_length=255)

@@ -20,6 +20,7 @@ if not all([KAFKA_BROKER, CONSUMER_GROUP, KAFKA_TOPIC, KAFKA_OFFSET]):
     logger.error("One or more environment variables are missing.")
     raise ValueError("Environment variables KAFKA_BROKER, CONSUMER_GROUP, KAFKA_TOPIC, and KAFKA_OFFSET must be set.")
 
+
 # Initialize a Kafka consumer
 consumer = KafkaConsumer(
     KAFKA_TOPIC,
@@ -28,6 +29,7 @@ consumer = KafkaConsumer(
     auto_offset_reset=KAFKA_OFFSET,
     value_deserializer=lambda x: json.loads(x.decode('utf-8'))
 )
+
 
 def extract_id_from_filename(filename):
     base_name, extension = os.path.splitext(filename)
