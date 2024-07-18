@@ -284,7 +284,7 @@ class UploadAuditDataView(APIView):
                 end_date=timezone.now() + timezone.timedelta(days=30),
                 organization=Organization.objects.first(),
                 status='Accepted',
-                created_by= CustomUser.objects.get(mobile='8547892863')
+                created_by= request.user
             )
             job_instance.save()
 
@@ -321,13 +321,13 @@ class UploadAuditDataView(APIView):
                             name=category_name + "_" + sub_cat['sub_category_name'],
                             description=sub_cat.get('description', ''),
                             image=image_file,
-                            # uploaded_by=request.user,
+                            uploaded_by=request.user,
                             category=category_name,
                             subcategory=sub_cat.get('sub_category_name'),
                             location=location_instance,
                             jobno=job_instance,
                             survey=sub_cat.get('surveys', []),
-                            uploaded_by=CustomUser.objects.get(mobile='8547892863')
+                            # uploaded_by=CustomUser.objects.get(mobile='8547892863')
                         )
                         image_upload_instance.save()
                         
