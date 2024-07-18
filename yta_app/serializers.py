@@ -67,7 +67,7 @@ class ImageUploadSerializer(serializers.ModelSerializer):
 #         return None
     
 class HistorySerializer(serializers.ModelSerializer):
-    image_base64 = serializers.SerializerMethodField()
+    # image_base64 = serializers.SerializerMethodField()
     location_name = serializers.SerializerMethodField()  # Field to fetch the location name
 
     class Meta:
