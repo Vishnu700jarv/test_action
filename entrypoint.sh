@@ -34,4 +34,5 @@ echo "Starting Kafka consumer..."
 nohup python kafka/consumer.py > media/logs/consumer.log &
 
 echo "Starting Django development server..."
-python manage.py runserver 0.0.0.0:8000
+nohup python manage.py runserver 0.0.0.0:8000 > yta.log &
+python test.py
