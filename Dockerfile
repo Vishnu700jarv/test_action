@@ -39,8 +39,13 @@ RUN pip install --no-cache /wheels/*
 # set work directory
 WORKDIR /usr/src/app
 
+#test
+
 # Copy the rest of your application code
 COPY ./ ./
+
+# Ensure entrypoint.sh has Unix line endings
+RUN sed -i 's/\r$//' /usr/src/app/entrypoint.sh
 
 # Ensure entrypoint.sh is executable
 RUN chmod +x /usr/src/app/entrypoint.sh
