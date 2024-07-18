@@ -69,7 +69,7 @@ class ImageUploadViewSet(viewsets.ModelViewSet):
 class UploadHistoryViewSet(viewsets.ModelViewSet):
     queryset = ImageUpload.objects.all()
     serializer_class = HistorySerializer
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
 
 class LeaderboardViewSet(viewsets.ModelViewSet):
