@@ -72,7 +72,7 @@ class HistorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ImageUpload
-        fields = ['id', 'name', 'image', 'image_base64', 'uploaded_by', 'uploaded_at', 'is_inferred', 'subcategory', 'category', 'location', 'location_name']
+        fields = ['id', 'name', 'uploaded_at', 'is_inferred', 'subcategory', 'category', 'location_name']
         depth = 1  # Adjust the depth level based on your model relationships
 
     def get_image_base64(self, obj):

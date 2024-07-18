@@ -5,6 +5,7 @@ import base64
 from PIL import Image
 from io import BytesIO
 from django.core.files.base import ContentFile
+from cryptography.fernet import Fernet
 
 class CSVLogger:
     def __init__(self, filename='backlog.csv', subfolder='logs'):
@@ -75,3 +76,18 @@ class ImageToBase64Converter:
         django_file.name = filename+'.jpeg'  # Set a relevant file name here
 
         return django_file
+    
+
+
+# Use a key generated and stored securely, possibly loaded from an environment variable
+key = Fernet.generate_key()
+cipher = Fernet(key)
+
+def encrypt_data(data):
+    return cipher.encrypt(data.encode())
+
+def decrypt_data(encrypted_data):
+    try:
+        return cipher.decrypt(encrypted_data.encode()).decode()
+    except:
+        return None

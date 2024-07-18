@@ -1,18 +1,18 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.utils import timezone
 from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
-from ytauser.models import CustomUser
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import AuditScore, Job, News, Organization, CatalogItem, IconUpload, ImageUpload, Leaderboard, OverlayUpload, StreamData, Location, SurveyTemplate
 from .serializers import AuditScoreSerializer, CatalogItemsSerializer, HistorySerializer, JobSerializer, NewsSerializer,OverlayUploadSerializer, OrganizationSerializer, CatalogItemSerializer, IconUploadSerializer, ImageUploadSerializer, LeaderboardSerializer, StreamDataSerializer, LocationSerializer
 from rest_framework.response import Response
 from django.db.models import Q
 from rest_framework import status
-from .utils import ImageToBase64Converter, CSVLogger
+from .utils import ImageToBase64Converter, CSVLogger, decrypt_data
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.timezone import now
 
 
 
@@ -69,7 +69,7 @@ class ImageUploadViewSet(viewsets.ModelViewSet):
 class UploadHistoryViewSet(viewsets.ModelViewSet):
     queryset = ImageUpload.objects.all()
     serializer_class = HistorySerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
 
 class LeaderboardViewSet(viewsets.ModelViewSet):
@@ -84,22 +84,72 @@ class StreamDataViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
+# class LocationViewSet(viewsets.ModelViewSet):
+#     queryset = Location.objects.all()
+#     serializer_class = LocationSerializer
+#     permission_classes = [IsAuthenticated]
+
+
+#     def get_queryset(self):
+#         queryset = Location.objects.all()
+#         # Get the search parameter from the request
+#         search_query = self.request.query_params.get('search', None)
+        
+#         if search_query:
+#             # Filter queryset based on search parameter
+#             queryset = queryset.filter(Q(name__icontains=search_query) | Q(address__icontains=search_query))
+        
+#         return queryset
+
+
+# Assuming you have a function `decrypt_data` defined elsewhere that handles the decryption logic
+
 class LocationViewSet(viewsets.ModelViewSet):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
-    permission_classes = [IsAuthenticated]
 
+    def get_permissions(self):
+        """
+        Assign permissions based on action and authentication.
+        """
+        if self.action == 'list' or self.action == 'retrieve':
+            self.permission_classes = [AllowAny]
+        else:
+            self.permission_classes = [IsAuthenticated]
+        return super(LocationViewSet, self).get_permissions()
 
-    def get_queryset(self):
-        queryset = Location.objects.all()
-        # Get the search parameter from the request
-        search_query = self.request.query_params.get('search', None)
+    def list(self, request, *args, **kwargs):
+        """
+        Handle GET requests for list; check for encryption key if user is not authenticated.
+        """
+        if not request.user.is_authenticated:
+            encrypted_key = request.query_params.get('key')
+            if encrypted_key:
+                decrypted = decrypt_data(encrypted_key)
+                # Check if the decrypted date is within the last hour
+                if decrypted and now() - datetime.strptime(decrypted, "%Y-%m-%d %H:%M:%S") < timedelta(hours=1):
+                    return super().list(request, *args, **kwargs)
+                return Response({'error': 'Invalid or expired key'}, status=403)
+            return Response({'error': 'Authentication or valid key required'}, status=401)
         
-        if search_query:
-            # Filter queryset based on search parameter
-            queryset = queryset.filter(Q(name__icontains=search_query) | Q(address__icontains=search_query))
+        return super().list(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Handle GET requests for individual items; check for encryption key if user is not authenticated.
+        """
+        if not request.user.is_authenticated:
+            encrypted_key = request.query_params.get('key')
+            if encrypted_key:
+                decrypted = decrypt_data(encrypted_key)
+                # Check if the decrypted date is within the last hour
+                if decrypted and now() - datetime.strptime(decrypted, "%Y-%m-%d %H:%M:%S") < timedelta(hours=1):
+                    return super().retrieve(request, *args, **kwargs)
+                return Response({'error': 'Invalid or expired key'}, status=403)
+            return Response({'error': 'Authentication or valid key required'}, status=401)
         
-        return queryset
+        return super().retrieve(request, *args, **kwargs)
+
 
 class JobViewSet(viewsets.ModelViewSet):
     queryset = Job.objects.all()
