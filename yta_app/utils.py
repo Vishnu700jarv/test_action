@@ -61,7 +61,7 @@ class ImageToBase64Converter:
         # Open the image from the bytes buffer
         image = Image.open(image_buffer)
         # Save the image to the specified path in PNG format
-        image.save(output_path, format="PNG")
+        image.save(output_path, format="jpeg")
 
     def base64_to_image(self,base64_string,filename):
         # Decode the base64 string into binary data

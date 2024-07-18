@@ -41,7 +41,8 @@ class Organization(models.Model):
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="created_organizations")
 
     def __str__(self):
-        return self.name
+        return f"organization {self.id} - {self.name} created by {self.created_by.mobile if self.created_by else 'Unknown'}"
+    
     
     class Meta:
         db_table = 'organization'
@@ -57,7 +58,7 @@ class IconUpload(models.Model):
 
 
     def __str__(self):
-        return f"Icon {self.id} uploaded by {self.uploaded_by.mobile if self.uploaded_by else 'Unknown'}"
+        return f"Icon {self.id}-{self.icon_file.name} uploaded by {self.uploaded_by.mobile if self.uploaded_by else 'Unknown'}"
 
 
 class OverlayUpload(models.Model):
@@ -69,7 +70,7 @@ class OverlayUpload(models.Model):
 
 
     def __str__(self):
-        return f"Overlay {self.id} uploaded by {self.uploaded_by.mobile if self.uploaded_by else 'Unknown'}"
+        return f"Overlay {self.id}-{self.overlay_file.name} uploaded by {self.uploaded_by.mobile if self.uploaded_by else 'Unknown'}"
 
 class CatalogItem(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -108,7 +109,7 @@ class SurveyTemplate(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Survey Template {self.survey_id} for Catalog Item {self.catalog_id}"
+        return f"Survey Template {self.survey_id}-{self.catalog_id} for Catalog Item {self.catalog_id}"
 
     class Meta:
         db_table = 'SurveyTemplate'
@@ -126,7 +127,8 @@ class Location(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.name
+        return f"Location {self.location_id}-{self.name}-{self.location_type}"
+        
 
 # class Location(models.Model):
 #     location_id = models.AutoField(primary_key=True)
@@ -206,7 +208,8 @@ class ImageUpload(models.Model):
     survey = models.JSONField(default=list)  # Survey data in JSON format
 
     def __str__(self):
-        return self.name
+        return f"{self.id} ({self.name})-{self.jobno}-{self.location}-{self.category}-{self.subcategory}"
+
 
 class Leaderboard(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -217,7 +220,7 @@ class Leaderboard(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.task} - {self.user_id}"
+        return f"{self.task} - {self.user_id.mobile}"
 
 
 class StreamData(models.Model):
@@ -225,9 +228,10 @@ class StreamData(models.Model):
     inference_data = models.JSONField(default=dict)
     image = models.ForeignKey('ImageUpload', on_delete=models.CASCADE, related_name='stream_data',null=True, blank=True)
     generated_timestamp = models.DateTimeField(auto_now_add=True)
+    category = models.CharField(max_length=255,null=True, blank=True) 
 
     def __str__(self):
-        return f"{self.category} - {self.site}"
+        return f"{self.image} - {self.generated_timestamp}"
 
 
 class News(models.Model):
@@ -274,7 +278,7 @@ class AuditScore(models.Model):
     comments = models.TextField(null=True, blank=True, verbose_name="General Comments")
 
     def __str__(self):
-        return f"Audit Score for {self.audit_date.strftime('%Y-%m-%d')} linked to ImageUpload {self.image_upload.id}"
+        return f"Audit Score for {self.audit_date.strftime('%Y-%m-%d')} linked to ImageUpload {self.image_upload.id}-{self.image_upload.name}-job-{self.image_upload.jobno}"
 
     class Meta:
         verbose_name = "Audit Score"

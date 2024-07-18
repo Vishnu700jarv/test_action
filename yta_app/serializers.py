@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import AuditScore, News, Organization, CatalogItem, IconUpload, OverlayUpload, SurveyTemplate, Job, ImageUpload, Leaderboard, StreamData, Location
-
+from .utils import ImageToBase64Converter
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
@@ -51,6 +51,20 @@ class ImageUploadSerializer(serializers.ModelSerializer):
         model = ImageUpload
         fields = '__all__'
 
+class HistorySerializer(serializers.ModelSerializer):
+    image_base64 = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ImageUpload
+        fields = ['id', 'name', 'description', 'image', 'image_base64', 'uploaded_by', 'uploaded_at', 'is_inferred', 'subcategory', 'additional_reason', 'category', 'location', 'jobno', 'survey']
+        depth = 1  # Adjust the depth level based on your model relationships
+
+    def get_image_base64(self, obj):
+        if obj.image:
+            image_convertor = ImageToBase64Converter(obj.image.path)
+            image_string = image_convertor.convert_image_to_base64()
+            return image_string
+        return None
 class LeaderboardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Leaderboard
@@ -76,4 +90,4 @@ class NewsSerializer(serializers.ModelSerializer):
 class AuditScoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuditScore
-        fields = '__all__'  
+        fields = '__all__' 
