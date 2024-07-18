@@ -51,20 +51,43 @@ class ImageUploadSerializer(serializers.ModelSerializer):
         model = ImageUpload
         fields = '__all__'
 
+# class HistorySerializer(serializers.ModelSerializer):
+#     image_base64 = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = ImageUpload
+#         fields = ['id', 'name', 'image', 'image_base64', 'uploaded_by', 'uploaded_at', 'is_inferred', 'subcategory', 'category', 'location']
+#         depth = 1  # Adjust the depth level based on your model relationships
+
+#     def get_image_base64(self, obj):
+#         if obj.image:
+#             image_convertor = ImageToBase64Converter(obj.image.path)
+#             image_string = image_convertor.convert_image_to_base64()
+#             return image_string
+#         return None
+    
 class HistorySerializer(serializers.ModelSerializer):
     image_base64 = serializers.SerializerMethodField()
+    location_name = serializers.SerializerMethodField()  # Field to fetch the location name
 
     class Meta:
         model = ImageUpload
-        fields = ['id', 'name', 'description', 'image', 'image_base64', 'uploaded_by', 'uploaded_at', 'is_inferred', 'subcategory', 'additional_reason', 'category', 'location', 'jobno', 'survey']
+        fields = ['id', 'name', 'image', 'image_base64', 'uploaded_by', 'uploaded_at', 'is_inferred', 'subcategory', 'category', 'location', 'location_name']
         depth = 1  # Adjust the depth level based on your model relationships
 
     def get_image_base64(self, obj):
         if obj.image:
-            image_convertor = ImageToBase64Converter(obj.image.path)
-            image_string = image_convertor.convert_image_to_base64()
-            return image_string
+            try:
+                image_convertor = ImageToBase64Converter(obj.image.path)
+                image_string = image_convertor.convert_image_to_base64()
+                return image_string
+            except Exception as e:
+                return str(e)
         return None
+
+    def get_location_name(self, obj):
+        # This method returns the name of the location associated with the image upload
+        return obj.location.name if obj.location else None
 class LeaderboardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Leaderboard
