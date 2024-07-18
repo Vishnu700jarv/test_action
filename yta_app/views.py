@@ -7,7 +7,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from ytauser.models import CustomUser
 from .models import AuditScore, Job, News, Organization, CatalogItem, IconUpload, ImageUpload, Leaderboard, OverlayUpload, StreamData, Location, SurveyTemplate
-from .serializers import AuditScoreSerializer, CatalogItemsSerializer, JobSerializer, NewsSerializer,OverlayUploadSerializer, OrganizationSerializer, CatalogItemSerializer, IconUploadSerializer, ImageUploadSerializer, LeaderboardSerializer, StreamDataSerializer, LocationSerializer
+from .serializers import AuditScoreSerializer, CatalogItemsSerializer, HistorySerializer, JobSerializer, NewsSerializer,OverlayUploadSerializer, OrganizationSerializer, CatalogItemSerializer, IconUploadSerializer, ImageUploadSerializer, LeaderboardSerializer, StreamDataSerializer, LocationSerializer
 from rest_framework.response import Response
 from django.db.models import Q
 from rest_framework import status
@@ -63,6 +63,14 @@ class CatalogItemsViewSet(viewsets.ModelViewSet):
 class ImageUploadViewSet(viewsets.ModelViewSet):
     queryset = ImageUpload.objects.all()
     serializer_class = ImageUploadSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class UploadHistoryViewSet(viewsets.ModelViewSet):
+    queryset = ImageUpload.objects.all()
+    serializer_class = HistorySerializer
+    permission_classes = [IsAuthenticated]
+
 
 class LeaderboardViewSet(viewsets.ModelViewSet):
     queryset = Leaderboard.objects.all()
