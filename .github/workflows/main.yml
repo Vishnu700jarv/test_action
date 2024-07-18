@@ -36,7 +36,7 @@ jobs:
     - name: Checkout deployment repo
       uses: actions/checkout@v2
       with:
-        repository: difinative/YTA-ACD
+        repository: difinative/YTA_ACD
         token: ${{ secrets.G_TOKEN }}
         path: deployment-repo
         ref: master
