@@ -12,6 +12,7 @@ router = DefaultRouter()
 router.register('profiles', ProfileViewSet,'profiles')
 router.register('user_activities', UserActivityViewSet,'activities')
 router.register('rewards', RewardViewSet,'rewards')
+router.register('get-user', AdminUserViewSet, basename='get-user')  
 
 urlpatterns = [
     path('create_user/', CreateUserView.as_view(), name='create_user'),
@@ -25,7 +26,7 @@ urlpatterns = [
     path('send/', SendOTPView.as_view(), name='send_otp'),
     path('verify/', VerifyOTPView.as_view(), name='verify_otp'),
     path('resend/', ResendOTPView.as_view(), name='resend_otp'),
-    path('get-users/', AdminUserViewSet.as_view(), name='get-users'),
+    # path('get-users/', AdminUserViewSet.as_view(), name='get-users'),
     path('logout/', LogoutAPIView.as_view(), name='logout'),
     path('', include(router.urls)),  # Includes the ModelViewSet URLs
 ]
