@@ -64,16 +64,34 @@ class ImageToBase64Converter:
         # Save the image to the specified path in PNG format
         image.save(output_path, format="jpeg")
 
-    def base64_to_image(self,base64_string,filename):
+    def base64_to_image(self, base64_string, filename):
         # Decode the base64 string into binary data
         image_data = base64.b64decode(base64_string)
         # Turn these bytes into a Django-compatible file-like object
         image_file = BytesIO(image_data)
         image = Image.open(image_file)
 
-        # Convert image to Django's File or ContentFile
-        django_file = ContentFile(image_file.getvalue())
-        django_file.name = filename+'.jpeg'  # Set a relevant file name here
+        # Optimize and compress the image if necessary
+        # Set the desired size (2MB)
+        max_size = 2 * 1024 * 1024  # 2 Megabytes
+
+        # Save the image temporarily to check its size
+        temp_file = BytesIO()
+        image.save(temp_file, format='JPEG', quality=85)  # Start with 85% quality
+        if temp_file.tell() > max_size:  # Check if the file is too large
+            quality = 85  # Start quality
+            while temp_file.tell() > max_size and quality > 30:
+                quality -= 5
+                temp_file.seek(0)
+                image.save(temp_file, format='JPEG', quality=quality)
+
+        # Read the optimized content of the file
+        temp_file.seek(0)
+        optimized_image_data = temp_file.read()
+
+        # Convert to Django's File or ContentFile
+        django_file = ContentFile(optimized_image_data)
+        django_file.name = filename + '.jpeg'  # Set the filename with .jpeg extension
 
         return django_file
     
