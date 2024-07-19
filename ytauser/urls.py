@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CreateAccountWithEmptyPasswordView, CreateUserEmailView, CreateUserView, LoginUserView, LogoutAPIView, OTPEmailLoginView, OTPLoginView, ProfileViewSet, ResendOTPView, SendOTPView, UserActivityViewSet, RewardViewSet, VerifyOTPView
+from .views import AdminUserViewSet, CreateAccountWithEmptyPasswordView, CreateUserEmailView, CreateUserView, LoginUserView, LogoutAPIView, OTPEmailLoginView, OTPLoginView, ProfileViewSet, ResendOTPView, SendOTPView, UserActivityViewSet, RewardViewSet, VerifyOTPView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -25,6 +25,7 @@ urlpatterns = [
     path('send/', SendOTPView.as_view(), name='send_otp'),
     path('verify/', VerifyOTPView.as_view(), name='verify_otp'),
     path('resend/', ResendOTPView.as_view(), name='resend_otp'),
+    path('get-users/', AdminUserViewSet.as_view(), name='get-users'),
     path('logout/', LogoutAPIView.as_view(), name='logout'),
     path('', include(router.urls)),  # Includes the ModelViewSet URLs
 ]

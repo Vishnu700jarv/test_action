@@ -117,3 +117,10 @@ class RewardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reward
         fields = ['user', 'points', 'description']
+
+
+class AdminUserSerializer(serializers.ModelSerializer):   
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'first_name', 'last_name', 'mobile', 'email']
+

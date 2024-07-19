@@ -5,7 +5,7 @@ from rest_framework.views import APIView, View
 from rest_framework.response import Response
 from django.contrib.auth import login
 from .models import  CustomUser, Profile, UserActivity, Reward
-from .serializers import CreateUserEmailSerializer, CreateUserSerializer, CreateUserWithNPSerializer, LoginUserSerializer, ProfileSerializer, UserActivitySerializer, RewardSerializer
+from .serializers import CreateUserEmailSerializer, CreateUserSerializer,AdminUserSerializer, CreateUserWithNPSerializer, LoginUserSerializer, ProfileSerializer, UserActivitySerializer, RewardSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from django.http import JsonResponse
@@ -301,3 +301,8 @@ class LogoutAPIView(APIView):
     def post(self, request):
         request.user.auth_token.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class AdminUserViewSet(viewsets.ModelViewSet):
+    queryset = CustomUser.objects.all()
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsAuthenticated]  #
