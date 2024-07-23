@@ -112,7 +112,7 @@ class LocationViewSet(viewsets.ModelViewSet):
         """
         Assign permissions based on action and authentication.
         """
-        if self.action == 'list' or self.action == 'retrieve':
+        if self.action in ['list', 'retrieve']:
             self.permission_classes = [AllowAny]
         else:
             self.permission_classes = [IsAuthenticated]
@@ -124,12 +124,19 @@ class LocationViewSet(viewsets.ModelViewSet):
         """
         if not request.user.is_authenticated:
             encrypted_key = request.query_params.get('key')
-            if encrypted_key:
-                decrypted = decrypt_data(encrypted_key)
-                # Check if the decrypted date is within the last hour
-                if decrypted and now() - datetime.strptime(decrypted, "%Y-%m-%d %H:%M:%S") < timedelta(hours=1):
-                    return super().list(request, *args, **kwargs)
-                return Response({'error': 'Invalid or expired key'}, status=403)
+            iv = request.query_params.get('iv')
+            if encrypted_key and iv:
+                decrypted = decrypt_data(encrypted_key, iv)
+                print(f"Decrypted key: {decrypted}")
+                try:
+                    decrypted_date = datetime.strptime(decrypted, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    if now() - decrypted_date < timedelta(hours=1):
+                        return super().list(request, *args, **kwargs)
+                    else:
+                        return Response({'error': 'Invalid or expired key'}, status=403)
+                except Exception as e:
+                    print(f"Error parsing date: {e}")
+                    return Response({'error': 'Invalid key format'}, status=403)
             return Response({'error': 'Authentication or valid key required'}, status=401)
         
         return super().list(request, *args, **kwargs)
@@ -140,12 +147,19 @@ class LocationViewSet(viewsets.ModelViewSet):
         """
         if not request.user.is_authenticated:
             encrypted_key = request.query_params.get('key')
-            if encrypted_key:
-                decrypted = decrypt_data(encrypted_key)
-                # Check if the decrypted date is within the last hour
-                if decrypted and now() - datetime.strptime(decrypted, "%Y-%m-%d %H:%M:%S") < timedelta(hours=1):
-                    return super().retrieve(request, *args, **kwargs)
-                return Response({'error': 'Invalid or expired key'}, status=403)
+            iv = request.query_params.get('iv')
+            if encrypted_key and iv:
+                decrypted = decrypt_data(encrypted_key, iv)
+                print(f"Decrypted key: {decrypted}")
+                try:
+                    decrypted_date = datetime.strptime(decrypted, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    if now() - decrypted_date < timedelta(hours=1):
+                        return super().retrieve(request, *args, **kwargs)
+                    else:
+                        return Response({'error': 'Invalid or expired key'}, status=403)
+                except Exception as e:
+                    print(f"Error parsing date: {e}")
+                    return Response({'error': 'Invalid key format'}, status=403)
             return Response({'error': 'Authentication or valid key required'}, status=401)
         
         return super().retrieve(request, *args, **kwargs)
