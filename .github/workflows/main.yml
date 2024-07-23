@@ -38,8 +38,8 @@ jobs:
     needs: build  # Ensure 'build' job has completed successfully
     steps:
       - name: Print Docker image tag
-        run: echo "Pulling Docker image: ${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }}"
-    
+        run: echo "Pulling Docker image:${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }}"
+        
       - name: Pull Docker image
         run: docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }}
 
