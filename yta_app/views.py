@@ -12,8 +12,8 @@ from django.db.models import Q
 from rest_framework import status
 from .utils import ImageToBase64Converter, CSVLogger, decrypt_data
 from django.core.exceptions import ObjectDoesNotExist
-from django.utils.timezone import now
-
+from django.utils.timezone import now, make_aware
+import pytz
 
 
 class OrganizationViewSet(viewsets.ModelViewSet):
@@ -118,48 +118,50 @@ class LocationViewSet(viewsets.ModelViewSet):
             self.permission_classes = [IsAuthenticated]
         return super(LocationViewSet, self).get_permissions()
 
+    def validate_key(self, decoded):
+        """
+        Validate the decoded key format and content.
+        """
+        try:
+            location, ip, datetime_str, key, year = decoded.split('_')
+            if key == 'yta' and year == '2024':
+                decoded_date = datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                decoded_date = make_aware(decoded_date, pytz.UTC)
+                if now() - decoded_date < timedelta(hours=1):
+                    return True
+            return False
+        except Exception as e:
+            print(f"Error parsing date: {e}")
+            return False
+
     def list(self, request, *args, **kwargs):
         """
-        Handle GET requests for list; check for encryption key if user is not authenticated.
+        Handle GET requests for list; check for encoded key if user is not authenticated.
         """
         if not request.user.is_authenticated:
-            encrypted_key = request.query_params.get('key')
-            iv = request.query_params.get('iv')
-            if encrypted_key and iv:
-                decrypted = decrypt_data(encrypted_key, iv)
-                print(f"Decrypted key: {decrypted}")
-                try:
-                    decrypted_date = datetime.strptime(decrypted, "%Y-%m-%dT%H:%M:%S.%fZ")
-                    if now() - decrypted_date < timedelta(hours=1):
-                        return super().list(request, *args, **kwargs)
-                    else:
-                        return Response({'error': 'Invalid or expired key'}, status=403)
-                except Exception as e:
-                    print(f"Error parsing date: {e}")
-                    return Response({'error': 'Invalid key format'}, status=403)
+            encoded_key = request.query_params.get('key')
+            if encoded_key:
+                decoded = decrypt_data(encoded_key)
+                if decoded and self.validate_key(decoded):
+                    return super().list(request, *args, **kwargs)
+                else:
+                    return Response({'error': 'Invalid or expired key'}, status=403)
             return Response({'error': 'Authentication or valid key required'}, status=401)
         
         return super().list(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
         """
-        Handle GET requests for individual items; check for encryption key if user is not authenticated.
+        Handle GET requests for individual items; check for encoded key if user is not authenticated.
         """
         if not request.user.is_authenticated:
-            encrypted_key = request.query_params.get('key')
-            iv = request.query_params.get('iv')
-            if encrypted_key and iv:
-                decrypted = decrypt_data(encrypted_key, iv)
-                print(f"Decrypted key: {decrypted}")
-                try:
-                    decrypted_date = datetime.strptime(decrypted, "%Y-%m-%dT%H:%M:%S.%fZ")
-                    if now() - decrypted_date < timedelta(hours=1):
-                        return super().retrieve(request, *args, **kwargs)
-                    else:
-                        return Response({'error': 'Invalid or expired key'}, status=403)
-                except Exception as e:
-                    print(f"Error parsing date: {e}")
-                    return Response({'error': 'Invalid key format'}, status=403)
+            encoded_key = request.query_params.get('key')
+            if encoded_key:
+                decoded = decrypt_data(encoded_key)
+                if decoded and self.validate_key(decoded):
+                    return super().retrieve(request, *args, **kwargs)
+                else:
+                    return Response({'error': 'Invalid or expired key'}, status=403)
             return Response({'error': 'Authentication or valid key required'}, status=401)
         
         return super().retrieve(request, *args, **kwargs)

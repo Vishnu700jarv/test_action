@@ -5,13 +5,6 @@ import base64
 from PIL import Image
 from io import BytesIO
 from django.core.files.base import ContentFile
-from Crypto.Cipher import AES
-import base64
-import hashlib
-from datetime import datetime
-from django.utils.timezone import now
-from datetime import timedelta
-
 
 
 class CSVLogger:
@@ -108,15 +101,12 @@ class ImageToBase64Converter:
 # Ensure this key is the same as the one used in your frontend
 SECRET_KEY = 'yta_2024'  # Your encryption key
 
-def decrypt_data(encrypted_data, iv):
+def decrypt_data(encoded_data):
     try:
-        key_hash = hashlib.sha256(SECRET_KEY.encode()).digest()
-        iv = base64.b64decode(iv)
-        cipher = AES.new(key_hash, AES.MODE_CFB, iv)
-        decrypted = cipher.decrypt(base64.b64decode(encrypted_data)).decode('utf-8')
-        return decrypted
+        decoded_bytes = base64.b64decode(encoded_data)
+        decoded_str = decoded_bytes.decode('utf-8')
+        print(f"Decoded data: {decoded_str}")
+        return decoded_str
     except Exception as e:
-        print(f"Decryption error: {e}")
+        print(f"Decoding error: {e}")
         return None
-
-
