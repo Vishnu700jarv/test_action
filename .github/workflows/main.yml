@@ -37,6 +37,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: build  # Ensure 'build' job has completed successfully
     steps:
+      - name: Extract Git SHA
+        id: vars
+        run: echo "GIT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+      
       - name: Print Docker image tag
         run: echo "Pulling Docker image:${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }}"
         
