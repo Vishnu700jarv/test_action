@@ -5,7 +5,14 @@ import base64
 from PIL import Image
 from io import BytesIO
 from django.core.files.base import ContentFile
-from cryptography.fernet import Fernet
+from Crypto.Cipher import AES
+import base64
+import hashlib
+from datetime import datetime
+from django.utils.timezone import now
+from datetime import timedelta
+
+
 
 class CSVLogger:
     def __init__(self, filename='backlog.csv', subfolder='logs'):
@@ -97,15 +104,19 @@ class ImageToBase64Converter:
     
 
 
-# Use a key generated and stored securely, possibly loaded from an environment variable
-key = Fernet.generate_key()
-cipher = Fernet(key)
 
-def encrypt_data(data):
-    return cipher.encrypt(data.encode())
+# Ensure this key is the same as the one used in your frontend
+SECRET_KEY = 'yta_2024'  # Your encryption key
 
-def decrypt_data(encrypted_data):
+def decrypt_data(encrypted_data, iv):
     try:
-        return cipher.decrypt(encrypted_data.encode()).decode()
-    except:
+        key_hash = hashlib.sha256(SECRET_KEY.encode()).digest()
+        iv = base64.b64decode(iv)
+        cipher = AES.new(key_hash, AES.MODE_CFB, iv)
+        decrypted = cipher.decrypt(base64.b64decode(encrypted_data)).decode('utf-8')
+        return decrypted
+    except Exception as e:
+        print(f"Decryption error: {e}")
         return None
+
+
