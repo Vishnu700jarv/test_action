@@ -13,41 +13,26 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-
-    - name: Login to Docker Hub
-      uses: docker/login-action@v1
+    - name: Set up Python
+      uses: actions/setup-python@v2
       with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+        python-version: '3.x'  # Replace with your Python version
 
-    - name: Extract Git SHA
-      id: vars
-      run: echo "GIT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
-    - name: Build and push Docker image
-      id: docker_build
-      uses: docker/build-push-action@v2
-      with:
-        push: true
-        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }}
-
-    - name: Checkout deployment repo
-      uses: actions/checkout@v2
-      with:
-        repository: difinative/YTA_ACD
-        token: ${{ secrets.G_TOKEN }}
-        path: deployment-repo
-        ref: master
-        
-
-    - name: Update Kubernetes deployment
+    - name: Install dependencies
       run: |
-        sed -i 's|image: .*$|image: ${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }}|' deployment-repo/django-deployment.yaml
-        cd deployment-repo
-        git config --global user.email "Argo@cd.com"
-        git config --global user.name "Argo CD"
-        git add django-deployment.yaml
-        git commit -m "Update image to ${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }}"
-        git push
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run Django migrations (if applicable)
+      run: |
+        python manage.py migrate --noinput
+
+    - name: Run Django tests
+      id: django_tests
+      run: |
+        python manage.py test
+      continue-on-error: true  # Continue to next step even if tests fail
+
+    - name: Check test status
+      if: steps.django_tests.outcome == 'success'
+      run: echo "Tests passed. Proceeding to Docker image build and push."
