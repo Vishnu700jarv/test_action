@@ -24,7 +24,7 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
-            - name: Send SonarQube analysis to Slack
+      - name: Send SonarQube analysis to Slack
         if: always()
         run: |
           project_key=testsq
