@@ -24,24 +24,40 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
-      - name: Send SonarQube analysis to Slack
+            - name: Send SonarQube analysis to Slack
         if: always()
         run: |
           project_key=testsq
-          quality_gate_status=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/qualitygates/project_status?projectKey=$project_key | jq -r '.projectStatus.status')
-          coverage=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?component=$project_key&metricKeys=coverage | jq -r '.component.measures[0].value')
-          duplication=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?component=$project_key&metricKeys=duplicated_lines_density | jq -r '.component.measures[0].value')
-          reliability=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?component=$project_key&metricKeys=reliability_rating | jq -r '.component.measures[0].value')
-          security=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?component=$project_key&metricKeys=security_rating | jq -r '.component.measures[0].value')
-          maintainability=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?component=$project_key&metricKeys=sqale_rating | jq -r '.component.measures[0].value')
-          hotspots=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?component=$project_key&metricKeys=vulnerabilities | jq -r '.component.measures[0].value')
+          sonar_host="${{ secrets.SONAR_HOST_URL }}"
+          sonar_token="${{ secrets.SONAR_TOKEN }}"
 
+          # Quality Gate Status
+          quality_gate_status=$(curl -s -u $sonar_token: $sonar_host/api/qualitygates/project_status?projectKey=$project_key | jq -r '.projectStatus.status')
+
+          # Coverage
+          coverage=$(curl -s -u $sonar_token: $sonar_host/api/measures/component?componentKey=$project_key&metricKeys=coverage | jq -r '.component.measures[0].value')
+
+          # Duplication
+          duplication=$(curl -s -u $sonar_token: $sonar_host/api/measures/component?componentKey=$project_key&metricKeys=duplicated_lines_density | jq -r '.component.measures[0].value')
+
+          # Reliability
+          reliability=$(curl -s -u $sonar_token: $sonar_host/api/measures/component?componentKey=$project_key&metricKeys=reliability_rating | jq -r '.component.measures[0].value')
+
+          # Security
+          security=$(curl -s -u $sonar_token: $sonar_host/api/measures/component?componentKey=$project_key&metricKeys=security_rating | jq -r '.component.measures[0].value')
+
+          # Maintainability
+          maintainability=$(curl -s -u $sonar_token: $sonar_host/api/measures/component?componentKey=$project_key&metricKeys=sqale_rating | jq -r '.component.measures[0].value')
+
+          # Hotspots Reviewed
+          hotspots=$(curl -s -u $sonar_token: $sonar_host/api/measures/component?componentKey=$project_key&metricKeys=vulnerabilities | jq -r '.component.measures[0].value')
+
+          # Construct the payload for Slack
           payload=$(jq -n --arg qgs "$quality_gate_status" --arg cov "$coverage" --arg dup "$duplication" --arg rel "$reliability" --arg sec "$security" --arg main "$maintainability" --arg hs "$hotspots" \
           '{
             text: "SonarQube Analysis Report:\n*Quality Gate Status:* \($qgs)\n*Coverage:* \($cov)%\n*Duplication:* \($dup)%\n*Reliability:* \($rel)\n*Security:* \($sec)\n*Maintainability:* \($main)\n*Hotspots Reviewed:* \($hs)"
           }')
 
+          # Send the payload to Slack
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL }}
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
