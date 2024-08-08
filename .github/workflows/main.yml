@@ -27,7 +27,7 @@ jobs:
       - name: Send SonarQube analysis to Slack
         if: always()
         run: |
-          project_key="your_project_key"  # Replace with your actual project key
+          project_key=testsq
           quality_gate_status=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/qualitygates/project_status?projectKey=$project_key | jq -r '.projectStatus.status')
           coverage=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?component=$project_key&metricKeys=coverage | jq -r '.component.measures[0].value')
           duplication=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?component=$project_key&metricKeys=duplicated_lines_density | jq -r '.component.measures[0].value')
