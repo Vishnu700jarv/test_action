@@ -25,3 +25,32 @@ jobs:
       #   timeout-minutes: 5
       #   env:
       #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+
+      - name: Send SonarQube analysis to Slack
+        if: always()
+        run: |
+          quality_gate_status=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/qualitygates/project_status?projectKey=your_project_key | jq -r '.projectStatus.status')
+          coverage=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?componentKey=your_project_key&metricKeys=coverage | jq -r '.component.measures[0].value')
+          duplication=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?componentKey=your_project_key&metricKeys=duplicated_lines_density | jq -r '.component.measures[0].value')
+          reliability=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?componentKey=your_project_key&metricKeys=reliability_rating | jq -r '.component.measures[0].value')
+          security=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?componentKey=your_project_key&metricKeys=security_rating | jq -r '.component.measures[0].value')
+          maintainability=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?componentKey=your_project_key&metricKeys=sqale_rating | jq -r '.component.measures[0].value')
+          hotspots=$(curl -s -u ${{ secrets.SONAR_TOKEN }} ${{ secrets.SONAR_HOST_URL }}/api/measures/component?componentKey=your_project_key&metricKeys=vulnerabilities | jq -r '.component.measures[0].value')
+
+          payload="{
+            \"text\": \"SonarQube Analysis Report:\n
+            *Quality Gate Status:* $quality_gate_status\n
+            *Coverage:* $coverage%\n
+            *Duplication:* $duplication%\n
+            *Reliability:* $reliability\n
+            *Security:* $security\n
+            *Maintainability:* $maintainability\n
+            *Hotspots Reviewed:* $hotspots\"
+          }"
+
+          curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      
