@@ -52,6 +52,12 @@ jobs:
 
           for metric in "${metrics[@]}"; do
             result=$(curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=$metric | jq -r '.component.measures[0].value // "0"')
+
+            # If the result is empty or null, set it to "0"
+            if [ -z "$result" ] || [ "$result" == "null" ]; then
+              result="0"
+            fi
+
             echo "$metric: $result"
             results+=("$result")
           done
