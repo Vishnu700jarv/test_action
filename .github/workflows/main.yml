@@ -62,13 +62,13 @@ jobs:
           security="${results[2]}"
           ScaleRating="${results[3]}"
           Vulnarability="${results[4]}"
-          Hotspot="${results[5]}"
+          Hotspots="${results[5]}"
 
           # SonarQube report URL (created to use this in slack , in testing , can use this report_url if needed, add this in the arg below "--arg url "$report_url"")
           report_url="${sonar_host}/dashboard?id=${project_key}"
 
           # Construct the payload for Slack
-          payload=$(jq -n --arg qgs "$quality_gate_status" --arg dup "$duplication" --arg rel "$reliability" --arg sec "$security" --arg sca "$ScaleRating" --arg vul "$Vulnarability" --arg hs "$hotspot"  \
+          payload=$(jq -n --arg qgs "$quality_gate_status" --arg dup "$duplication" --arg rel "$reliability" --arg sec "$security" --arg sca "$ScaleRating" --arg vul "$Vulnarability" --arg hs "$hotspots"  \
           '{
             text: "Here is your SonarQube analysis report for the latest SQScan:\n*Quality Gate Status:* \($qgs)\n*Duplication:* \($dup)%\n*Reliability:* \($rel)\n*Security:* \($sec)\n*ScaleRating:* \($sca)\n*Vulnarability:* \($vul)\n*Hotspots Reviewed:* \($hs)\n*Please find the commit comment from git to access the SonarQube and find full report and other details*"
           }')
