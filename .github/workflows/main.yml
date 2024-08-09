@@ -52,10 +52,10 @@ jobs:
 
 
           echo "Fetching raw API response for duplicated_lines_density..."
-          curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=duplicated_lines_density \n
+          curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=duplicated_lines_density
 
           echo "Fetching raw API response for hotspots..."
-          curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=hotspots \n
+          curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=hotspots
 
 
           curl -s -u $sonar_token: $sonar_host/api/metrics/search /n
