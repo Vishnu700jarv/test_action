@@ -47,11 +47,11 @@ jobs:
           echo "Raw Security Metric API Response: $security_rating"
 
           # Fetch individual metrics
-          metrics=("duplicated_lines_density" "reliability_rating" "security_rating" "sqale_rating" "vulnerabilities")
+          metrics=("duplicated_lines_density" "reliability_rating" "security_rating" "sqale_rating" "vulnerabilities" "hotspots")
           results=()
 
           for metric in "${metrics[@]}"; do
-            result=$(curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=$metric | jq -r '.component.measures[0].value')
+            result=$(curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=$metric | jq -r '.component.measures[0].value // "0"')
             echo "$metric: $result"
             results+=("$result")
           done
