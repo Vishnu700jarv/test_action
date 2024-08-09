@@ -50,6 +50,14 @@ jobs:
           metrics=("duplicated_lines_density" "reliability_rating" "security_rating" "sqale_rating" "vulnerabilities" "hotspots")
           results=()
 
+
+          echo "Fetching raw API response for duplicated_lines_density..."
+          curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=duplicated_lines_density
+
+          echo "Fetching raw API response for hotspots..."
+          curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=hotspots
+
+
           for metric in "${metrics[@]}"; do
             result=$(curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=$metric | jq -r '.component.measures[0].value // "0"')
 
