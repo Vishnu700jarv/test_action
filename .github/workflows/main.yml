@@ -56,20 +56,21 @@ jobs:
             results+=("$result")
           done
 
-          # coverage="${results[0]}" (should add this in the "Fetch individual metrics above if required)
-          duplication="${results[1]}"
-          reliability="${results[2]}"
-          security="${results[3]}"
-          maintainability="${results[4]}"
-          hotspots="${results[5]}"
+          # coverage="${results[0]}" (should add this in the "Fetch individual metrics and in the arg section below "--arg cov "$coverage"   above if required)
+          duplication="${results[0]}"
+          reliability="${results[1]}"
+          security="${results[2]}"
+          ScaleRating="${results[3]}"
+          Vulnarability="${results[4]}"
+          Hotspot="${results[5]}"
 
           # SonarQube report URL (created to use this in slack , in testing , can use this report_url if needed, add this in the arg below "--arg url "$report_url"")
           report_url="${sonar_host}/dashboard?id=${project_key}"
 
           # Construct the payload for Slack
-          payload=$(jq -n --arg qgs "$quality_gate_status" --arg cov "$coverage" --arg dup "$duplication" --arg rel "$reliability" --arg sec "$security" --arg main "$maintainability" --arg hs "$hotspots"  \
+          payload=$(jq -n --arg qgs "$quality_gate_status" --arg dup "$duplication" --arg rel "$reliability" --arg sec "$security" --arg sca "$ScaleRating" --arg vul "$Vulnarability" --arg hs "$hotspots"  \
           '{
-            text: "Here is your SonarQube analysis report for the latest SQScan:\n*Quality Gate Status:* \($qgs)\n*Duplication:* \($dup)%\n*Reliability:* \($rel)\n*Security:* \($sec)\n*Maintainability:* \($main)\n*Hotspots Reviewed:* \($hs)\n*Please find the commit comment from git to access the SonarQube and find full report and other details*"
+            text: "Here is your SonarQube analysis report for the latest SQScan:\n*Quality Gate Status:* \($qgs)\n*Duplication:* \($dup)%\n*Reliability:* \($rel)\n*Security:* \($sec)\n*ScaleRating:* \($sca)\n*Vulnarability:* \($vul)\n*Hotspots Reviewed:* \($hs)\n*Please find the commit comment from git to access the SonarQube and find full report and other details*"
           }')
 
           # Send the payload to Slack
