@@ -47,15 +47,14 @@ jobs:
           echo "Raw Security Metric API Response: $security_rating"
 
           # Fetch individual metrics
-          metrics=("duplicated_lines_density" "reliability_rating" "security_rating" "sqale_rating" "vulnerabilities" "security_hotspots")
+          metrics=("duplicated_lines_density" "reliability_rating" "security_rating" "code_smells" "vulnerabilities" "security_hotspots_reviewed")
           results=()
 
 
-          echo "Fetching raw API response for duplicated_lines_density..."
-          curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=duplicated_lines_density
-
+         
+          #test log to find correct metrics
           echo "Fetching raw API response for hotspots..."
-          curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=security_hotspots
+          curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=security_hotspots_reviewed
 
 
           
@@ -77,7 +76,7 @@ jobs:
           duplication="${results[0]}"
           reliability="${results[1]}"
           security="${results[2]}"
-          ScaleRating="${results[3]}"
+          Maintainability="${results[3]}"
           Vulnarability="${results[4]}"
           Hotspot="${results[5]}"
 
@@ -85,9 +84,9 @@ jobs:
           report_url="${sonar_host}/dashboard?id=${project_key}"
 
           # Construct the payload for Slack
-          payload=$(jq -n --arg qgs "$quality_gate_status" --arg dup "$duplication" --arg rel "$reliability" --arg sec "$security" --arg sca "$ScaleRating" --arg vul "$Vulnarability" --arg hs "$Hotspot"  \
+          payload=$(jq -n --arg qgs "$quality_gate_status" --arg dup "$duplication" --arg rel "$reliability" --arg sec "$security" --arg man "$Maintainability" --arg vul "$Vulnarability" --arg hs "$Hotspot"  \
           '{
-            text: "Here is your SonarQube analysis report for the latest SQScan:\n*Quality Gate Status:* \($qgs)\n*Duplication:* \($dup)%\n*Reliability:* \($rel)\n*Security:* \($sec)\n*ScaleRating:* \($sca)\n*Vulnarability:* \($vul)\n*Hotspots Reviewed:* \($hs)\n*Please find the commit comment from git to access the SonarQube and find full report and other details*"
+            text: "Here is your SonarQube analysis report for the latest SQScan:\n*Quality Gate Status:* \($qgs)\n*Duplication:* \($dup)%\n*Reliability rating:* \($rel)\n*Security rating:* \($sec)\n*Maintainability (open issue):* \($man)\n*Vulnarability:* \($vul)\n*Hotspots Reviewed:* \($hs)%\n*Please find the commit comment from git to access the SonarQube and find full report and other details*"
           }')
 
           # Send the payload to Slack
