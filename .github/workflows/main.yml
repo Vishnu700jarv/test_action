@@ -86,7 +86,7 @@ jobs:
           # Construct the payload for Slack
           payload=$(jq -n --arg qgs "$quality_gate_status" --arg dup "$duplication" --arg rel "$reliability" --arg sec "$security" --arg man "$Maintainability" --arg vul "$Vulnarability" --arg hs "$Hotspot"  \
           '{
-            text: "Here is your SonarQube analysis report for the latest SQScan:\n*Quality Gate Status:* \($qgs)\n*Duplication:* \($dup)%\n*Reliability rating:* \($rel)\n*Security rating:* \($sec)\n*Maintainability (open issue):* \($man)\n*Vulnarability:* \($vul)\n*Hotspots Reviewed:* \($hs)%\n*Please find the commit comment from git to access the SonarQube and find full report and other details*"
+            text: "Here is your SonarQube analysis report for the latest SQScan:\n*Quality Gate Status:* \($qgs)\n*Duplication:* \($dup)%\n*Reliability rating:* \($rel)\n*Security rating:* \($sec)\n*Maintainability (open issue):* \($man)\n*security issues:* \($vul)\n*Hotspots Reviewed:* \($hs)%\n*Please find the commit comment from git to access the SonarQube and find full report and other details*"
           }')
 
           # Send the payload to Slack
