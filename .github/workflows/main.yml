@@ -24,18 +24,6 @@ jobs:
       #   env:
       #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: Install GitHub CLI
-        run: sudo apt-get install -y gh
-      
-      - name: Post SonarQube Analysis Report to Commit
-        if: always()
-        env:
-          GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
-        run: |
-          REPORT_URL="${{ secrets.SONAR_HOST_URL }}/dashboard?id=${{ github.repository }}:${{ github.sha }}"
-          COMMENT_BODY="### SonarQube Analysis Report\n[View the full report here](${REPORT_URL})"
-          gh api repos/${{ github.repository }}/commits/${{ github.sha }}/comments -f body="${COMMENT_BODY}"
-
       - name: Install jq
         run: sudo apt-get install -y jq
 
@@ -75,13 +63,13 @@ jobs:
           maintainability="${results[4]}"
           hotspots="${results[5]}"
 
-          # SonarQube report URL
+          # SonarQube report URL (created to use this in slack , in testing , can use this report_url if needed, add this in the arg below "--arg url "$report_url"")
           report_url="${sonar_host}/dashboard?id=${project_key}"
 
           # Construct the payload for Slack
-          payload=$(jq -n --arg qgs "$quality_gate_status" --arg cov "$coverage" --arg dup "$duplication" --arg rel "$reliability" --arg sec "$security" --arg main "$maintainability" --arg hs "$hotspots" --arg url "$report_url" \
+          payload=$(jq -n --arg qgs "$quality_gate_status" --arg cov "$coverage" --arg dup "$duplication" --arg rel "$reliability" --arg sec "$security" --arg main "$maintainability" --arg hs "$hotspots"  \
           '{
-            text: "Here is your SonarQube analysis report for the latest SQScan:\n*Quality Gate Status:* \($qgs)\n*Duplication:* \($dup)%\n*Reliability:* \($rel)\n*Security:* \($sec)\n*Maintainability:* \($main)\n*Hotspots Reviewed:* \($hs)\n<${url}|View Full Report>"
+            text: "Here is your SonarQube analysis report for the latest SQScan:\n*Quality Gate Status:* \($qgs)\n*Duplication:* \($dup)%\n*Reliability:* \($rel)\n*Security:* \($sec)\n*Maintainability:* \($main)\n*Hotspots Reviewed:* \($hs)\n*Please find the commit comment from git to access the SonarQube and find full report and other details*"
           }')
 
           # Send the payload to Slack
