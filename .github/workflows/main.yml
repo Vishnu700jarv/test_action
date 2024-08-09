@@ -17,7 +17,7 @@ jobs:
 
       - uses: sonarsource/sonarqube-scan-action@master
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKENT }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
       - name: Install jq
@@ -28,7 +28,7 @@ jobs:
         run: |
           project_key="testsq"
           sonar_host="${{ secrets.SONAR_HOST_URL }}"
-          sonar_token="${{ secrets.SONAR_TOKEN }}"
+          sonar_token="${{ secrets.SONAR_TOKENT }}"
 
           # Fetch Quality Gate Status
           quality_gate_status=$(curl -s -u $sonar_token: $sonar_host/api/qualitygates/project_status?projectKey=$project_key | jq -r '.projectStatus.status')
