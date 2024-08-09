@@ -34,6 +34,10 @@ jobs:
           quality_gate_status=$(curl -s -u $sonar_token: $sonar_host/api/qualitygates/project_status?projectKey=$project_key | jq -r '.projectStatus.status')
           echo "Quality Gate Status: $quality_gate_status"
 
+          # Log raw API response
+          echo "Fetching raw API response for coverage..."
+          curl -s -u $sonar_token: $sonar_host/api/measures/component?component=$project_key\&metricKeys=coverage
+
           # Fetch individual metrics
           metrics=("coverage" "duplicated_lines_density" "reliability_rating" "security_rating" "sqale_rating" "vulnerabilities")
           results=()
