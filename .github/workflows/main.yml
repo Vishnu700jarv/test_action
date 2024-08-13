@@ -57,10 +57,12 @@ jobs:
       - name: Send Trivy Report to Slack
         if: success()
         run: |
-          # Extract summary information from the Trivy report
-          vulnerabilities=$(grep -E '^[^ ]+ (HIGH|CRITICAL)' trivy_report.txt | wc -l)
-          high_vulns=$(grep 'HIGH' trivy_report.txt | wc -l)
-          critical_vulns=$(grep 'CRITICAL' trivy_report.txt | wc -l)
+          # Calculate the number of high and critical vulnerabilities
+          high_vulns=$(grep -c 'HIGH' trivy_report.txt)
+          critical_vulns=$(grep -c 'CRITICAL' trivy_report.txt)
+          
+          # Calculate the total vulnerabilities
+          vulnerabilities=$((high_vulns + critical_vulns))
           
           # Create a summary message
           msg="The Trivy scan completed with the following results:\n\n*Total Vulnerabilities: ${vulnerabilities}*\n*High Vulnerabilities: ${high_vulns}*\n*Critical Vulnerabilities: ${critical_vulns}*"
@@ -68,6 +70,7 @@ jobs:
           # Send summary to Slack
           payload=$(jq -n --arg msg "$msg" '{text: "*Trivy Scan Report:*\n\n\($msg)"}')
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
+
 
 
       
