@@ -32,6 +32,8 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }} .
 
+          
+
       - name: Install Trivy
         run: |
           sudo apt-get update && sudo apt-get install -y wget apt-transport-https gnupg lsb-release
@@ -39,16 +41,11 @@ jobs:
           echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
           sudo apt-get update && sudo apt-get install -y trivy
 
-      
-
-
-      
-
-
-
       - name: Scan Docker image with Trivy
         id: trivy_scan
         run: |
+          trivy image --severity HIGH,CRITICAL --no-progress ${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }} > trivy_report.txt
+          cat trivy_report.txt
           trivy image --severity HIGH,CRITICAL --format json --no-progress ${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }} > trivy_report.json
           cat trivy_report.json
 
