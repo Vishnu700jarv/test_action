@@ -39,37 +39,34 @@ jobs:
           echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
           sudo apt-get update && sudo apt-get install -y trivy
 
+      
+
+
+      
+
+
+
       - name: Scan Docker image with Trivy
         id: trivy_scan
         run: |
-          trivy image --severity HIGH,CRITICAL --no-progress ${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }} > trivy_report.txt
-          cat trivy_report.txt
-
-      - name: Push Docker image to Docker Hub
-        if: success()
-        run: |
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }}
-
-    
-
-
+          trivy image --severity HIGH,CRITICAL --format json --no-progress ${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }} > trivy_report.json
+          cat trivy_report.json
 
       - name: Send Trivy Report to Slack
         if: success()
         run: |
-          # Calculate the number of high and critical vulnerabilities
-          high_vulns=$(grep -c 'HIGH' trivy_report.txt)
-          critical_vulns=$(grep -c 'CRITICAL' trivy_report.txt)
-          
-          # Calculate the total vulnerabilities
-          vulnerabilities=$((high_vulns + critical_vulns))
+          # Parse JSON output to count vulnerabilities
+          total_vulns=$(jq '[.Results[].Vulnerabilities[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy_report.json)
+          high_vulns=$(jq '[.Results[].Vulnerabilities[] | select(.Severity == "HIGH")] | length' trivy_report.json)
+          critical_vulns=$(jq '[.Results[].Vulnerabilities[] | select(.Severity == "CRITICAL")] | length' trivy_report.json)
           
           # Create a summary message
-          msg="The Trivy scan completed with the following results:\n\n*Total Vulnerabilities: ${vulnerabilities}*\n*High Vulnerabilities: ${high_vulns}*\n*Critical Vulnerabilities: ${critical_vulns}*"
+          msg="The Trivy scan completed with the following results:\n\n*Total Vulnerabilities: ${total_vulns}*\n*High Vulnerabilities: ${high_vulns}*\n*Critical Vulnerabilities: ${critical_vulns}*"
           
           # Send summary to Slack
           payload=$(jq -n --arg msg "$msg" '{text: "*Trivy Scan Report:*\n\n\($msg)"}')
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
+
 
 
 
