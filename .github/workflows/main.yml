@@ -66,10 +66,11 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
 
           # Upload file using Slack API
-          response=$(curl -F file=@trivy_report.txt \
+          response=$(curl -X POST -H "Authorization: Bearer ${{ secrets.SLACK_OAUTH_TOKEN }}" \
+           -F file=@trivy_report.txt \
            -F "initial_comment=Trivy Scan Report for ${{ env.GIT_SHA }}" \
            -F channels=${{ secrets.SLACK_CHANNEL_ID }} \
-           -H "Authorization: Bearer ${{ secrets.SLACK_OAUTH_TOKEN }}" \
            https://slack.com/api/files.upload)
 
           echo "Slack API Response: $response"
+
