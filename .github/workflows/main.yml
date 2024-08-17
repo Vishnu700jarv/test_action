@@ -64,30 +64,50 @@ jobs:
 
           
           
-          
-      - name: Convert Trivy Report to Slack Attachment
-        id: convert_report
-        run: |
-          # Read the content of the Trivy report
-          report_content=$(cat trivy_report.txt | head -n 20) # Limit to the first 20 lines for brevity
+          #Send file to slack 
 
-          # Format the content for Slack
-          payload=$(jq -n --arg content "$report_content" '{
-            "attachments": [
-              {
-                "fallback": "Trivy Scan Report",
-                "color": "#36a64f",
-                "title": "Trivy Scan Report",
-                "text": $content
-              }
-            ]
-          }')
+          # Define variables
+          access_token="DROPBOX_ACCESS_TOKEN"
+          file_path="trivy_report.txt"  # Path to your local file
+          dropbox_path="/trivy_report.txt"  # Desired path in Dropbox
 
-          # Save the payload to a file
-          echo "$payload" > slack_payload.json
+          # Upload the file to Dropbox
+          response=$(curl -X POST https://content.dropboxapi.com/2/files/upload \
+            --header "Authorization: Bearer $access_token" \
+            --header "Dropbox-API-Arg: {\"path\": \"$dropbox_path\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false}" \
+            --header "Content-Type: application/octet-stream" \
+            --data-binary @$file_path)
 
-      - name: Send Report to Slack
+          echo "Dropbox API Response: $response"
+
+          # Define the file ID or path
+          file_path="/trivy_report.txt"
+
+          # Create a shareable link
+          response=$(curl -X POST https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings \
+            --header "Authorization: Bearer $access_token" \
+            --header "Content-Type: application/json" \
+            --data "{\"path\": \"$file_path\"}")
+
+          # Extract the shareable link
+          link=$(echo $link_response | jq -r '.url')
+          echo "Dropbox Shared Link: $link"
+
+          # Save the link as an environment variable for later steps
+          echo "LINK=$link" >> $GITHUB_ENV
+
+      - name: Notify Slack
         if: success()
         run: |
-          curl -X POST -H 'Content-type: application/json' --data @slack_payload.json ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
+          # Construct the message payload
+          link="${{ env.LINK }}"
+          payload=$(jq -n --arg link "$link" '{text: "The Trivy scan report is available [here]($link)."}')
+
+          # Send the message to Slack
+          curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
+
+
+          
+
+
 
