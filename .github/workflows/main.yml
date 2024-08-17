@@ -32,8 +32,6 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }} .
 
-          
-
       - name: Install Trivy
         run: |
           sudo apt-get update && sudo apt-get install -y wget apt-transport-https gnupg lsb-release
@@ -59,13 +57,10 @@ jobs:
           
           # Create a summary message
           msg=$(printf "The Trivy scan completed with the following results:\n\n*Total Vulnerabilities: %s*\n*High Vulnerabilities: %s*\n*Critical Vulnerabilities: %s*" "$total_vulns" "$high_vulns" "$critical_vulns")
-    
           
-          # Send summary to Slack
-          payload=$(jq -n --arg msg "$msg" '{text: "*Trivy Scan Report:*\n\n\($msg)"}')
+          # Read the Trivy report file
+          report_content=$(cat trivy_report.txt | sed 's/$/\\n/g' | tr -d '\n')
+
+          # Send summary and report content to Slack
+          payload=$(jq -n --arg msg "$msg" --arg report "$report_content" '{text: "*Trivy Scan Report:*\n\n\($msg)\n\n*Report Content:*\n\($report)"}')
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
-
-
-
-
-      
