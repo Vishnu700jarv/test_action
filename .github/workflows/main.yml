@@ -65,12 +65,12 @@ jobs:
           
           
           
-          # Upload file using Slack API
-          - name: Upload Trivy report to Slack using GitHub Actions Slack Integration
-            uses: slackapi/slack-github-action@v1.21.0
-            with:
-              channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
-              slack-message: "The Trivy report is attached below."
-              file-path: trivy_report.txt
+      # Upload file using Slack API
+      - name: Upload Trivy report to Slack using GitHub Actions Slack Integration
+        uses: slackapi/slack-github-action@v1.21.0
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-message: "The Trivy report is attached below."
+          file-path: trivy_report.txt
 
 
