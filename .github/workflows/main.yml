@@ -66,28 +66,31 @@ jobs:
           
           #Send file to slack 
 
-          # Define variables
-          access_token="DROPBOX_ACCESS_TOKEN"
-          file_path="trivy_report.txt"  # Path to your local file
-          dropbox_path="/trivy_report.txt"  # Desired path in Dropbox
+          # Set variables
+          access_token="${{ secrets.DROPBOX_ACCESS_TOKEN }}"
+          file_path="trivy_report.txt"
+          dropbox_path="/trivy_report.txt"
+
+          echo "Uploading file to Dropbox..."
 
           # Upload the file to Dropbox
-          response=$(curl -X POST https://content.dropboxapi.com/2/files/upload \
+          upload_response=$(curl -X POST https://content.dropboxapi.com/2/files/upload \
             --header "Authorization: Bearer $access_token" \
             --header "Dropbox-API-Arg: {\"path\": \"$dropbox_path\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false}" \
             --header "Content-Type: application/octet-stream" \
             --data-binary @$file_path)
-
-          echo "Dropbox API Response: $response"
-
-          # Define the file ID or path
-          file_path="/trivy_report.txt"
+          
+          echo "Dropbox Upload Response: $upload_response"
 
           # Create a shareable link
-          response=$(curl -X POST https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings \
+          echo "Creating shareable link..."
+
+          link_response=$(curl -X POST https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings \
             --header "Authorization: Bearer $access_token" \
             --header "Content-Type: application/json" \
-            --data "{\"path\": \"$file_path\"}")
+            --data "{\"path\": \"$dropbox_path\"}")
+
+          echo "Dropbox Link Response: $link_response"
 
           # Extract the shareable link
           link=$(echo $link_response | jq -r '.url')
@@ -99,13 +102,21 @@ jobs:
       - name: Notify Slack
         if: success()
         run: |
-          # Construct the message payload
+          echo "Preparing to send message to Slack..."
+
+          # Get the Dropbox link from the environment variable
           link="${{ env.LINK }}"
-          payload=$(jq -n --arg link "$link" '{text: "The Trivy scan report is available [here]($link)."}')
+          
+          # Construct the message payload
+          payload=$(jq -n --arg link "$link" '{text: "The Trivy scan report is available <\($link)|here>."}')
+          
+          # Debug output for payload
+          echo "Slack Payload: $payload"
 
           # Send the message to Slack
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
 
+          echo "Message sent to Slack."
 
           
 
