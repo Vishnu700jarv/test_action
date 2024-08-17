@@ -54,17 +54,13 @@ jobs:
           total_vulns=$(jq '[.Results[].Vulnerabilities[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy_report.json)
           high_vulns=$(jq '[.Results[].Vulnerabilities[] | select(.Severity == "HIGH")] | length' trivy_report.json)
           critical_vulns=$(jq '[.Results[].Vulnerabilities[] | select(.Severity == "CRITICAL")] | length' trivy_report.json)
-          
+    
           # Create a summary message
           msg=$(printf "The Trivy scan completed with the following results:\n\n*Total Vulnerabilities: %s*\n*High Vulnerabilities: %s*\n*Critical Vulnerabilities: %s*" "$total_vulns" "$high_vulns" "$critical_vulns")
-    
+  
           # Send message to Slack channel using webhook
           payload=$(jq -n --arg msg "$msg" '{text: "*Trivy Scan Report:*\n\n\($msg)"}')
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
-
-          
-          
-          #Send file to slack 
 
           # Set variables
           access_token="${{ secrets.DROPBOX_ACCESS_TOKEN }}"
@@ -79,24 +75,34 @@ jobs:
             --header "Dropbox-API-Arg: {\"path\": \"$dropbox_path\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false}" \
             --header "Content-Type: application/octet-stream" \
             --data-binary @$file_path)
-          
+    
           echo "Dropbox Upload Response: $upload_response"
 
           # Confirm that the file was uploaded to the correct path
           echo "File should be uploaded to: $dropbox_path"
-
-          # Create a shareable link
-          echo "Creating shareable link..."
-
-          link_response=$(curl -X POST https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings \
+  
+          # Check if a shared link already exists
+          link_response=$(curl -X POST https://api.dropboxapi.com/2/sharing/list_shared_links \
             --header "Authorization: Bearer $access_token" \
             --header "Content-Type: application/json" \
-            --data "{\"path\": \"$dropbox_path\"}")
+            --data "{\"path\": \"$dropbox_path\",\"direct_only\": true}")
 
-          echo "Dropbox Link Response: $link_response"
+          existing_link=$(echo $link_response | jq -r '.links[0].url')
 
-          # Extract the shareable link
-          link=$(echo $link_response | jq -r '.url')
+          if [ "$existing_link" = "null" ]; then
+            # No existing link, create a new one
+            echo "Creating a new shareable link..."
+            link_response=$(curl -X POST https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings \
+              --header "Authorization: Bearer $access_token" \
+              --header "Content-Type: application/json" \
+              --data "{\"path\": \"$dropbox_path\"}")
+            link=$(echo $link_response | jq -r '.url')
+          else
+            # Use the existing link
+            echo "Using existing shared link..."
+            link=$existing_link
+           fi
+
           echo "Dropbox Shared Link: $link"
 
           # Save the link as an environment variable for later steps
@@ -106,19 +112,14 @@ jobs:
         if: success()
         run: |
           echo "Preparing to send message to Slack..."
-
           # Get the Dropbox link from the environment variable
           link="${{ env.LINK }}"
-          
+    
           # Construct the message payload
           payload=$(jq -n --arg link "$link" '{text: "The Trivy scan report is available <\($link)|here>."}')
-          
+    
           # Debug output for payload
           echo "Slack Payload: $payload"
-
           # Send the message to Slack
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
-
           echo "Message sent to Slack."
-
-
