@@ -82,6 +82,9 @@ jobs:
           
           echo "Dropbox Upload Response: $upload_response"
 
+          # Confirm that the file was uploaded to the correct path
+          echo "File should be uploaded to: $dropbox_path"
+
           # Create a shareable link
           echo "Creating shareable link..."
 
@@ -117,8 +120,5 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
 
           echo "Message sent to Slack."
-
-          
-
 
 
