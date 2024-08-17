@@ -58,9 +58,12 @@ jobs:
           # Create a summary message
           msg=$(printf "The Trivy scan completed with the following results:\n\n*Total Vulnerabilities: %s*\n*High Vulnerabilities: %s*\n*Critical Vulnerabilities: %s*" "$total_vulns" "$high_vulns" "$critical_vulns")
           
-          # Read the Trivy report file
-          report_content=$(cat trivy_report.txt | sed 's/$/\\n/g' | tr -d '\n')
-
           # Send summary and report content to Slack
-          payload=$(jq -n --arg msg "$msg" --arg report "$report_content" '{text: "*Trivy Scan Report:*\n\n\($msg)\n\n*Report Content:*\n\($report)"}')
+          payload=$(jq -n --arg msg "$msg" '{text: "*Trivy Scan Report:*\n\n\($msg)"}')
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
+
+          # Send the Trivy report in chunks
+          while IFS= read -r line; do
+            chunk=$(jq -n --arg text "$line" '{text: $text}')
+            curl -X POST -H 'Content-type: application/json' --data "$chunk" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
+          done < trivy_report.txt
