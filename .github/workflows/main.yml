@@ -47,6 +47,37 @@ jobs:
           trivy image --severity HIGH,CRITICAL --format json --no-progress ${{ secrets.DOCKER_HUB_USERNAME }}/apd:${{ env.GIT_SHA }} > trivy_report.json
           cat trivy_report.json
 
+
+
+      - name: Create Trivy Report Gist
+        id: create_gist
+        run: |
+          gist_url=$(curl -X POST -H "Authorization: token ${{ secrets.G_TOKEN }}" -d @- https://api.github.com/gists <<EOF
+          {
+            "description": "Trivy Report for Commit ${{ env.GIT_SHA }}",
+            "public": false,
+            "files": {
+              "trivy_report.txt": {
+                "content": "$(cat trivy_report.txt)"
+              }
+            }
+          }
+          EOF
+          | jq -r '.html_url')
+          echo "GIST_URL=$gist_url" >> $GITHUB_ENV
+
+
+      - name: Comment on the Commit with Trivy Report
+        run: |
+          commit_sha="${{ env.GIT_SHA }}"
+          gist_url="${{ env.GIST_URL }}"
+          comment="Trivy scan report for this commit is available [here](${gist_url})."
+          curl -X POST -H "Authorization: token ${{ secrets.G_TOKEN }}" \
+               -d '{"body":"'"$comment"'"}' \
+               https://api.github.com/repos/${{ github.repository }}/commits/${commit_sha}/comments
+
+          
+
       - name: Send Trivy Report to Slack
         if: success()
         run: |
@@ -63,93 +94,4 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
 
 
-      - name: Refresh Dropbox Access Token
-        id: refresh_token
-        run: |
-          refresh_token="${{ secrets.DROPBOX_REFRESH_TOKEN }}"
-          client_id="${{ secrets.DROPBOX_APP_KEY }}"
-          client_secret="${{ secrets.DROPBOX_APP_SECRET }}"
-
-          response=$(curl -X POST https://api.dropboxapi.com/oauth2/token \
-            --data-urlencode "grant_type=refresh_token" \
-            --data-urlencode "refresh_token=$refresh_token" \
-            --data-urlencode "client_id=$client_id" \
-            --data-urlencode "client_secret=$client_secret")
-
-          new_access_token=$(echo $response | jq -r '.access_token')
-          echo "DROPBOX_ACCESS_TOKEN=$new_access_token" >> $GITHUB_ENV
-     
-
-      # Encrypt the Trivy report with zip
-      - name: Encrypt Trivy Report
-        run: |
-          password=$(openssl rand -base64 12)
-          zip -e -P "$password" trivy_report.zip trivy_report.txt
-          echo "PASSWORD=$password" >> $GITHUB_ENV
-
-      # Upload the encrypted file to Dropbox
-      - name: Upload Encrypted Trivy Report to Dropbox
-        run: |
-          
-          # Set variables
-          access_token="${{ secrets.DROPBOX_ACCESS_TOKEN }}"
-          file_path="trivy_report.zip"
-          dropbox_path="/trivy_report.zip"
-
-          echo "Uploading file to Dropbox..."
-
-          # Upload the file to Dropbox
-          upload_response=$(curl -X POST https://content.dropboxapi.com/2/files/upload \
-            --header "Authorization: Bearer $access_token" \
-            --header "Dropbox-API-Arg: {\"path\": \"$dropbox_path\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false}" \
-            --header "Content-Type: application/octet-stream" \
-            --data-binary @$file_path)
-    
-          echo "Dropbox Upload Response: $upload_response"
-
-          # Confirm that the file was uploaded to the correct path
-          echo "File should be uploaded to: $dropbox_path"
-  
-          # Check if a shared link already exists
-          link_response=$(curl -X POST https://api.dropboxapi.com/2/sharing/list_shared_links \
-            --header "Authorization: Bearer $access_token" \
-            --header "Content-Type: application/json" \
-            --data "{\"path\": \"$dropbox_path\",\"direct_only\": true}")
-
-          existing_link=$(echo $link_response | jq -r '.links[0].url')
-
-          if [ "$existing_link" = "null" ]; then
-            # No existing link, create a new one
-            echo "Creating a new shareable link..."
-            link_response=$(curl -X POST https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings \
-              --header "Authorization: Bearer $access_token" \
-              --header "Content-Type: application/json" \
-              --data "{\"path\": \"$dropbox_path\"}")
-            link=$(echo $link_response | jq -r '.url')
-          else
-            # Use the existing link
-            echo "Using existing shared link..."
-            link=$existing_link
-           fi
-
-          echo "Dropbox Shared Link: $link"
-
-          # Save the link as an environment variable for later steps
-          echo "LINK=$link" >> $GITHUB_ENV
-
-      - name: Notify Slack
-        if: success()
-        run: |
-          echo "Preparing to send message to Slack..."
-          # Get the Dropbox link from the environment variable
-          link="${{ env.LINK }}"
-          password="${{ env.PASSWORD }}"
-
-          # Construct the message payload
-          payload=$(jq -n --arg link "$link" --arg password "$password" '{text: "The APD_BE Trivy scan report is available <\($link)|here>.(Download the zip using the download button in right upper corner)\nPassword: \($password)\n*REPORT FORMATS BETTER IF OPEN IN ANY BROWSER OR VSCODE*"}')
-    
-          # Debug output for payload
-          echo "Slack Payload: $payload"
-          # Send the message to Slack
-          curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
-          echo "Message sent to Slack."
+      
