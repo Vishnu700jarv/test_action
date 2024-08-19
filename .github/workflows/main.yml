@@ -62,20 +62,17 @@ jobs:
           payload=$(jq -n --arg msg "$msg" '{text: "*Trivy Scan Report:*\n\n\($msg)"}')
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
 
-      # Encrypt the Trivy report with a password
+      # Encrypt the Trivy report with OpenSSL
       - name: Encrypt Trivy Report
         run: |
           password=$(openssl rand -base64 12)
-          zip -e -P "$password" trivy_report.zip trivy_report.txt
+          openssl enc -aes-256-cbc -salt -in trivy_report.txt -out trivy_report.enc -k "$password"
           echo "PASSWORD=$password" >> $GITHUB_ENV
 
       # Upload the encrypted file to Dropbox
       - name: Upload Encrypted Trivy Report to Dropbox
         run: |
-          access_token="${{ secrets.DROPBOX_ACCESS_TOKEN }}"
-          file_path="trivy_report.zip"
-          dropbox_path="/trivy_report.zip"
-
+          
           # Set variables
           access_token="${{ secrets.DROPBOX_ACCESS_TOKEN }}"
           file_path="trivy_report.txt"
