@@ -52,6 +52,8 @@ jobs:
 
       - name: Send Trivy Report to Slack
         if: success()
+        env:
+          SLACK_OAUTH_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
         run: |
           python3 - <<EOF
           import os
@@ -70,4 +72,5 @@ jobs:
           except SlackApiError as e:
             print(f"Error uploading file: {e.response['error']}")
           EOF
+
           
