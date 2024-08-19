@@ -47,11 +47,11 @@ jobs:
       - name: Send Trivy Report to Slack
         if: success()
         run: |
-          # Upload the trivy_report.txt file to Slack using the new files.upload_v2 method
-          response=$(curl -F file=@trivy_report.txt \
+          # Upload the trivy_report.txt file to Slack using the Web API
+          response=$(curl -X POST -H "Authorization: Bearer ${{ secrets.SLACK_AOTH_TOKEN }}" \
+                      -F file=@trivy_report.txt \
                       -F "initial_comment=Trivy scan report for commit ${{ env.GIT_SHA }}" \
-                      -F channels=C07G5HVC2G4  \
-                      -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
-                      https://slack.com/api/files.upload_v2)
+                      -F channels=#general \
+                      https://slack.com/api/files.upload)
     
           echo "Slack API response: $response"
