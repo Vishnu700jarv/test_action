@@ -1,4 +1,4 @@
-name: test run for trivy
+name: test run for trivy with encryption txt file
 
 on:
   push:
