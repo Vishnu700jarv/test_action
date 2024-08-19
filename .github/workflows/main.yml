@@ -48,7 +48,7 @@ jobs:
         if: success()
         run: |
           # Upload the trivy_report.txt file to Slack using the Web API
-          response=$(curl -X POST -H "Authorization: Bearer ${{ secrets.SLACK_AOTH_TOKEN }}" \
+          response=$(curl -X POST -H "Authorization: Bearer ${{ secrets.SLACK_OAUTH_TOKEN }}" \ 
                       -F file=@trivy_report.txt \
                       -F "initial_comment=Trivy scan report for commit ${{ env.GIT_SHA }}" \
                       -F channels=C07G5HVC2G4 \
