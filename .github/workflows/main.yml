@@ -50,7 +50,7 @@ jobs:
           # Upload the trivy_report.txt file to Slack
           response=$(curl -F file=@trivy_report.txt \
                             -F "initial_comment=Trivy scan report for commit ${{ env.GIT_SHA }}" \
-                            -F channels=#general \
+                            -F channels=C07G5HVC2G4 \
                             -H "Authorization: Bearer ${{ secrets.SLACK_OAUTH_TOKEN }}" \
                             https://slack.com/api/files.upload)
           
