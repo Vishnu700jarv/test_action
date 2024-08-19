@@ -56,7 +56,7 @@ jobs:
           critical_vulns=$(jq '[.Results[].Vulnerabilities[] | select(.Severity == "CRITICAL")] | length' trivy_report.json)
     
           # Create a summary message
-          msg=$(printf "The Trivy scan completed with the following results:\n\n*Total Vulnerabilities: %s*\n*High Vulnerabilities: %s*\n*Critical Vulnerabilities: %s*" "$total_vulns" "$high_vulns" "$critical_vulns")
+          msg=$(printf "The Trivy scan completed with the following results:\n\n*Total Vulnerabilities: %s*\n*High Vulnerabilities: %s*\n*Critical Vulnerabilities: %s*" "$total_vulns" "$high_vulns" "$critical_vulns\n\nCreating full report ...")
   
           # Send message to Slack channel using webhook
           payload=$(jq -n --arg msg "$msg" '{text: "*Trivy Scan Report:*\n\n\($msg)"}')
@@ -131,7 +131,7 @@ jobs:
 
     
           # Construct the message payload
-          payload=$(jq -n --arg link "$link" --arg password "$password" '{text: "The encrypted Trivy scan report is available <\($link)|here>.\nPassword: \($password)"}')
+          payload=$(jq -n --arg link "$link" --arg password "$password" '{text: "The encrypted Trivy scan report is available <\($link)|here>.\nPassword: \($password)\n*REPORT FORMATS BETTER IF OPEN IN ANY BROWSER OR VSCODE*"}')
     
           # Debug output for payload
           echo "Slack Payload: $payload"
