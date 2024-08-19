@@ -56,10 +56,10 @@ jobs:
           critical_vulns=$(jq '[.Results[].Vulnerabilities[] | select(.Severity == "CRITICAL")] | length' trivy_report.json)
     
           # Create a summary message
-          msg=$(printf "The APD_BE Trivy scan completed with the following results:\n\nTotal Vulnerabilities: %s\nHigh Vulnerabilities: %s\nCritical Vulnerabilities: %s" "$total_vulns" "$high_vulns" "$critical_vulns"\n\n"Creating full report...")
-  
+          msg=$(printf "The APD_BE Trivy scan completed with the following results:\n\nTotal Vulnerabilities: %s\nHigh Vulnerabilities: %s\nCritical Vulnerabilities: %s" "$total_vulns" "$high_vulns" "$critical_vulns")
+          msg2=$(printf "Creating full report...")
           # Send message to Slack channel using webhook
-          payload=$(jq -n --arg msg "$msg" '{text: "*Trivy Scan Report:*\n\n\($msg)"}')
+          payload=$(jq -n --arg msg "$msg" '{text: "*Trivy Scan Report:*\n\n\($msg)\n($msg2)"}')
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
 
      
