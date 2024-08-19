@@ -57,7 +57,7 @@ jobs:
     
           # Create a summary message
           msg=$(printf "The APD_BE Trivy scan completed with the following results:\n\nTotal Vulnerabilities: %s\nHigh Vulnerabilities: %s\nCritical Vulnerabilities: %s" "$total_vulns" "$high_vulns" "$critical_vulns")
-          msg2=$(printf "Creating full report...")
+       
           # Send message to Slack channel using webhook
           payload=$(jq -n --arg msg "$msg" '{text: "*Trivy Scan Report:*\n\n\($msg)\n($msg2)"}')
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
@@ -129,9 +129,11 @@ jobs:
           link="${{ env.LINK }}"
           password="${{ env.PASSWORD }}"
 
-    
+          # Append ?dl=1 to the link for direct download
+          direct_download_link="${link}?dl=1"
+
           # Construct the message payload
-          payload=$(jq -n --arg link "$link" --arg password "$password" '{text: "The APD_BE Trivy scan report is available <\($link)|here>.\nPassword: \($password)\n*REPORT FORMATS BETTER IF OPEN IN ANY BROWSER OR VSCODE*"}')
+          payload=$(jq -n --arg link "$direct_download_link" --arg password "$password" '{text: "The APD_BE Trivy scan report is available <\($link)|here>.\nPassword: \($password)\n*REPORT FORMATS BETTER IF OPEN IN ANY BROWSER OR VSCODE*"}')
     
           # Debug output for payload
           echo "Slack Payload: $payload"
