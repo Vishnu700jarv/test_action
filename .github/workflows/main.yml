@@ -52,19 +52,18 @@ jobs:
       - name: Create Trivy Report Gist
         id: create_gist
         run: |
-          gist_url=$(curl -X POST -H "Authorization: token ${{ secrets.G_TOKEN }}" -d @- https://api.github.com/gists <<EOF
-          {
-            "description": "Trivy Report for Commit ${{ env.GIT_SHA }}",
-            "public": false,
-            "files": {
-              "trivy_report.txt": {
-                "content": "$(cat trivy_report.txt)"
-              }
-            }
-          }
-          EOF
-          | jq -r '.html_url')
+          gist_content=$(cat trivy_report.txt)
+          gist_data=$(jq -n --arg description "Trivy Report for Commit ${{ env.GIT_SHA }}" --arg content "$gist_content" \
+          '{description: $description, public: false, files: {"trivy_report.txt": {content: $content}}}')
+          
+          gist_url=$(curl -X POST -H "Authorization: token ${{ secrets.G_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d "$gist_data" \
+          https://api.github.com/gists | jq -r '.html_url')
+          
           echo "GIST_URL=$gist_url" >> $GITHUB_ENV
+
+      
 
 
       - name: Comment on the Commit with Trivy Report
