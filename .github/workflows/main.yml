@@ -62,17 +62,13 @@ jobs:
           payload=$(jq -n --arg msg "$msg" '{text: "*Trivy Scan Report:*\n\n\($msg)"}')
           curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK_URL_ALERTS }}
 
-      - name: Install Enscript and ps2pdf
-        run: sudo apt-get install -y enscript ghostscript
-
-      - name: Convert Trivy Report to PDF
-        run: enscript trivy_report.txt -o - | ps2pdf - trivy_report.pdf
+     
 
       # Encrypt the Trivy report with zip
       - name: Encrypt Trivy Report
         run: |
           password=$(openssl rand -base64 12)
-          zip -e -P "$password" trivy_report.zip trivy_report.pdf
+          zip -e -P "$password" trivy_report.zip trivy_report.txt
           echo "PASSWORD=$password" >> $GITHUB_ENV
 
       # Upload the encrypted file to Dropbox
