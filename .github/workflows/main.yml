@@ -51,7 +51,7 @@ jobs:
           response=$(curl -X POST -H "Authorization: Bearer ${{ secrets.SLACK_AOTH_TOKEN }}" \
                       -F file=@trivy_report.txt \
                       -F "initial_comment=Trivy scan report for commit ${{ env.GIT_SHA }}" \
-                      -F channels=#general \
+                      -F channels=C07G5HVC2G4 \
                       https://slack.com/api/files.upload)
     
           echo "Slack API response: $response"
