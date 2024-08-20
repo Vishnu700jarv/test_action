@@ -124,7 +124,7 @@ jobs:
           # Construct the payload for Slack
           payload=$(jq -n --arg qgs "$quality_gate_status" --arg dup "$duplication" --arg rel "$reliability" --arg sec "$security" --arg iss "$issues" --arg nis "$newissues" --arg man "$Maintainability" --arg vul "$Vulnarability" --arg hs "$Hotspot" --arg link "$report_url" \
           '{
-            text: "*Here is your \`APD_ADMIN\` SonarQube analysis report for the latest SQScan*:\n\n*Quality Gate Status: \($qgs)*\n\nDuplication: \($dup)%\nReliability rating: \($rel)\nSecurity rating: \($sec)\nIssues: \($iss)\nNew issues: \($nis)\nMaintainability (open issue): \($man)\nSecurity issues: \($vul)\nHotspots reviewed: \($hs)%\nThe \`APD_ADMIN\` Sonarqube report is available <\($link)|here>"
+            text: "*Here is your APD_ADMIN SonarQube analysis report for the latest SQScan*:\n\n*Quality Gate Status: \($qgs)*\n\nDuplication: \($dup)%\nReliability rating: \($rel)\nSecurity rating: \($sec)\nIssues: \($iss)\nNew issues: \($nis)\nMaintainability (open issue): \($man)\nSecurity issues: \($vul)\nHotspots reviewed: \($hs)%\nThe APD_ADMIN Sonarqube report is available <\($link)|here>"
           }')
 
           # Send the payload to Slack
