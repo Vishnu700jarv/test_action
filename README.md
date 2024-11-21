@@ -7,6 +7,7 @@ asdgadb `code`
 # This is a bash script
 echo "Hello, World!"
 
+```
 
 - Item 1
 - Item 2
